@@ -1,0 +1,10 @@
+/.vs
+/.idea
+
+/*.user
+
+/WAVParser/bin
+/WAVParser/obj
+
+/WAVParser.Test/bin
+/WAVParser.Test/obj

@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WAVParser", "WAVParser\WAVParser.csproj", "{28E416B0-5B57-4E57-803B-7F25F955D13D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WAVParser.Test", "WAVParser.Test\WAVParser.Test.csproj", "{E2DBBA6D-2299-43DA-933E-21C610BE934A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{28E416B0-5B57-4E57-803B-7F25F955D13D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28E416B0-5B57-4E57-803B-7F25F955D13D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28E416B0-5B57-4E57-803B-7F25F955D13D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28E416B0-5B57-4E57-803B-7F25F955D13D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2DBBA6D-2299-43DA-933E-21C610BE934A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2DBBA6D-2299-43DA-933E-21C610BE934A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2DBBA6D-2299-43DA-933E-21C610BE934A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2DBBA6D-2299-43DA-933E-21C610BE934A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
