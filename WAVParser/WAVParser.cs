@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,7 +25,8 @@ namespace NokitaKaze.WAVParser
             ChannelCount = 2;
             SampleRate = 44100;
             BitsPerSample = 16;
-            BlockAlign = 2;
+            BlockAlign = 4;
+            AudioFormat = 1;
         }
 
         public WAVParser(Stream stream)
@@ -67,7 +67,9 @@ namespace NokitaKaze.WAVParser
 
             if (this.SamplesCount > 0)
             {
-                var t = TimeSpan.FromSeconds(this.SamplesCount * 1d / this.SampleRate);
+                const double TicksPerSecond = TimeSpan.TicksPerSecond * 1d;
+                var t1 = this.SamplesCount * TicksPerSecond / this.SampleRate;
+                var t = TimeSpan.FromTicks((long) t1);
                 s += ", duration: " + t;
             }
 
@@ -78,7 +80,8 @@ namespace NokitaKaze.WAVParser
 
         public TimeSpan GetSpanForSamples(long samplesCount)
         {
-            return TimeSpan.FromTicks((long) Math.Round(10_000_000d * samplesCount / this.SampleRate));
+            const double TicksPerSecond = TimeSpan.TicksPerSecond * 1d;
+            return TimeSpan.FromTicks((long) Math.Round(TicksPerSecond * samplesCount / this.SampleRate));
         }
 
         public long GetFloorSamplesCount(TimeSpan span)
@@ -91,7 +94,11 @@ namespace NokitaKaze.WAVParser
             return GetFloorSamplesCount(TimeSpan.FromSeconds(seconds));
         }
 
+        public TimeSpan Duration => this.GetSpanForSamples(this.SamplesCount);
+
         #endregion
+
+        #region Read Data
 
         protected void ParseStream(Stream stream)
         {
@@ -325,5 +332,7 @@ namespace NokitaKaze.WAVParser
                 stream.Seek(additionalSeekSize, SeekOrigin.Current);
             }
         }
+
+        #endregion
     }
 }

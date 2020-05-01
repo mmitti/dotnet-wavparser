@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Xunit;
 
 namespace NokitaKaze.WAVParser.Test
@@ -35,7 +34,7 @@ namespace NokitaKaze.WAVParser.Test
             // IEEE float (WAVE_FORMAT_IEEE_FLOAT)
             data.Add(new object[]
             {
-                "./data/a441-32bit.float.wav", 1, 44100, 32, 44100, 
+                "./data/a441-32bit.float.wav", 1, 44100, 32, 44100,
                 "./data/a441-16bit.wav",
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
@@ -79,6 +78,9 @@ namespace NokitaKaze.WAVParser.Test
                 Assert.Equal(sampleRate, parser.SampleRate);
                 Assert.Equal(bitsPerSample, parser.BitsPerSample);
 
+                Assert.NotNull(parser.ToString());
+                Assert.InRange(parser.StartDataSeek, 42, 1024);
+
                 Assert.Equal(sampleCount, parser.SamplesCount);
                 foreach (var list in parser.Samples)
                 {
@@ -88,6 +90,13 @@ namespace NokitaKaze.WAVParser.Test
                         Assert.InRange(sample, -1, 1);
                     }
                 }
+
+                var durationDiff = parser.Duration - TimeSpan.FromSeconds(sampleCount * 1d / sampleRate);
+                var durationDiffTicks = Math.Abs(durationDiff.Ticks);
+                Assert.InRange(durationDiffTicks, 0, TimeSpan.TicksPerMillisecond - 1);
+
+                Assert.Equal(TimeSpan.TicksPerSecond, parser.GetSpanForSamples(sampleRate).Ticks);
+                Assert.Equal(sampleRate, parser.GetFloorSamplesCount(1));
             }
 
             if (templateFilename != null)
@@ -176,6 +185,20 @@ namespace NokitaKaze.WAVParser.Test
                     Assert.InRange(maxValue, sinusoidValue_Min, sinusoidValue_Max);
                 }
             }
+        }
+
+        [Fact]
+        public void CheckWorkingPureItem()
+        {
+            var item = new WAVParser();
+            Assert.Equal(1, item.AudioFormat);
+            Assert.InRange(item.ChannelCount, 1, int.MaxValue);
+            Assert.Equal(0, item.BitsPerSample % 8);
+            Assert.InRange(item.BitsPerSample, 1, 96_000);
+            Assert.Equal((item.BitsPerSample / 8) * item.ChannelCount, item.BlockAlign);
+            Assert.Equal(0, item.SamplesCount);
+            Assert.Equal(TimeSpan.Zero, item.Duration);
+            Assert.NotNull(item.ToString());
         }
     }
 }
