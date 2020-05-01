@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace NokitaKaze.WAVParser
@@ -18,12 +19,12 @@ namespace NokitaKaze.WAVParser
         public const ushort WAVE_FORMAT_EXTENSIBLE = 0xfffe;
 
         public List<List<double>> Samples;
-        public int ChannelCount;
-        public int SampleRate;
-        public int BitsPerSample;
-        public int BlockAlign;
+        public ushort ChannelCount;
+        public uint SampleRate;
+        public ushort BitsPerSample;
+        public ushort BlockAlign;
         public long StartDataSeek { get; protected set; }
-        public int AudioFormat;
+        public ushort AudioFormat;
         public System.Guid ExtensionSubFormatGuid;
 
         public WAVParser()
@@ -33,6 +34,23 @@ namespace NokitaKaze.WAVParser
             BitsPerSample = 16;
             BlockAlign = 4;
             AudioFormat = 1;
+        }
+
+        public static readonly string ParserVersion;
+
+        public static string GetFullParserVersion()
+        {
+            return "NokitaKaze-WAVParser-" + ParserVersion;
+        }
+
+        static WAVParser()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var t = (System.Reflection.AssemblyFileVersionAttribute) assembly
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyFileVersionAttribute))
+                .First();
+
+            ParserVersion = t.Version;
         }
 
         public WAVParser(Stream stream)
@@ -45,6 +63,7 @@ namespace NokitaKaze.WAVParser
             using (var ms = new MemoryStream())
             {
                 ms.Write(bytes.ToArray(), 0, bytes.Count());
+                ms.Seek(0, SeekOrigin.Begin);
                 ParseStream(ms);
             }
         }
@@ -187,7 +206,7 @@ namespace NokitaKaze.WAVParser
             }
 
             this.ChannelCount = rd.ReadUInt16();
-            this.SampleRate = (int) rd.ReadUInt32();
+            this.SampleRate = rd.ReadUInt32();
             rd.ReadBytes(4); // Average byte rate (byte per second / bps)
             this.BlockAlign = rd.ReadUInt16();
             this.BitsPerSample = rd.ReadUInt16();
@@ -430,6 +449,119 @@ namespace NokitaKaze.WAVParser
                 default:
                     throw new NotImplementedException(string.Format("Not supported extension sub format 0x{0:x4}",
                         this.AudioFormat));
+            }
+        }
+
+        #endregion
+
+        #region Write Data
+
+        public byte[] GetDataAsRiff()
+        {
+            if (this.BitsPerSample != 16)
+            {
+                throw new NotImplementedException();
+            }
+
+            using (var ms = new MemoryStream())
+            {
+                var formatChunk = GetFormatChunk();
+                var infoChunk = GetListChunk();
+                var rawPCMData = GetRawPCMData();
+
+                var rw = new BinaryWriter(ms);
+                rw.Write(Encoding.ASCII.GetBytes("RIFF"));
+                rw.Write((uint) (formatChunk.Length + infoChunk.Length + rawPCMData.Length + 4));
+                rw.Write(Encoding.ASCII.GetBytes("WAVE"));
+                rw.Write(formatChunk);
+                rw.Write(infoChunk);
+                rw.Write(rawPCMData);
+
+                ms.Seek(0, SeekOrigin.Begin);
+                return ms.ToArray();
+            }
+        }
+
+        protected static byte[] FormatChunk(string title, byte[] input)
+        {
+            if (title.Length != 4)
+            {
+                throw new Exception();
+            }
+
+            using (var ms = new MemoryStream())
+            {
+                var rw = new BinaryWriter(ms);
+
+                rw.Write(Encoding.ASCII.GetBytes(title));
+                rw.Write((uint) input.Length);
+                rw.Write(input);
+
+                ms.Seek(0, SeekOrigin.Begin);
+                return ms.ToArray();
+            }
+        }
+
+        protected byte[] GetFormatChunk()
+        {
+            using (var ms = new MemoryStream())
+            {
+                var averageBPS = this.SampleRate * this.ChannelCount * this.BitsPerSample / 8;
+
+                var rw = new BinaryWriter(ms);
+                rw.Write(this.AudioFormat);
+                rw.Write(this.ChannelCount);
+                rw.Write(this.SampleRate);
+                rw.Write(averageBPS);
+                rw.Write((ushort) (this.BitsPerSample * this.ChannelCount / 8));
+                rw.Write(this.BitsPerSample);
+
+                ms.Seek(0, SeekOrigin.Begin);
+                return FormatChunk("fmt ", ms.ToArray());
+            }
+        }
+
+        protected byte[] GetListChunk()
+        {
+            using (var ms = new MemoryStream())
+            {
+                var rw = new BinaryWriter(ms);
+
+                var ver = Encoding.ASCII.GetBytes(GetFullParserVersion()).ToList();
+                ver.Add(0);
+
+                rw.Write(Encoding.ASCII.GetBytes("INFO"));
+                rw.Write(Encoding.ASCII.GetBytes("ISFT"));
+                rw.Write((uint) ver.Count);
+                rw.Write(ver.ToArray());
+
+                return FormatChunk("LIST", ms.ToArray());
+            }
+        }
+
+        protected byte[] GetRawPCMData()
+        {
+            const double bit16R_up = 1d * short.MaxValue;
+            const double bit16R_down = -1d * short.MinValue;
+
+            using (var ms = new MemoryStream())
+            {
+                var rw = new BinaryWriter(ms);
+
+                var count = Samples[0].Count;
+
+                for (int i = 0; i < count; i++)
+                {
+                    // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+                    foreach (var datum in Samples)
+                    {
+                        var value = datum[i];
+                        short valueS = (short) ((value > 0) ? value * bit16R_up : value * bit16R_down);
+                        rw.Write(valueS);
+                    }
+                }
+
+                return FormatChunk("data", ms.ToArray());
             }
         }
 

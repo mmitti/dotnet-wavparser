@@ -11,6 +11,7 @@ namespace NokitaKaze.WAVParser.Test
         {
             // ReSharper disable once UseObjectOrCollectionInitializer
             var data = new List<object[]>();
+
             // Pure PCM files with format = 0x0001 (WAVE_FORMAT_PCM)
             data.Add(new object[] {"./data/test1-u8.wav", 2, 48000, 8, 13536, null, null});
             data.Add(new object[] {"./data/test1-s16le.wav", 2, 48000, 16, 13536, "./data/test1-u8.wav", null});
@@ -57,7 +58,7 @@ namespace NokitaKaze.WAVParser.Test
             });
             data.Add(new object[]
             {
-                "./data/a441-64bit.exten-float.wav", 1, 44100, 64, 44100, 
+                "./data/a441-64bit.exten-float.wav", 1, 44100, 64, 44100,
                 "./data/a441-16bit.wav",
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
@@ -82,7 +83,7 @@ namespace NokitaKaze.WAVParser.Test
             {
                 parser = new WAVParser(stream);
                 Assert.Equal(channelCount, parser.ChannelCount);
-                Assert.Equal(sampleRate, parser.SampleRate);
+                Assert.Equal((uint) sampleRate, parser.SampleRate);
                 Assert.Equal(bitsPerSample, parser.BitsPerSample);
 
                 Assert.NotNull(parser.ToString());
@@ -190,6 +191,42 @@ namespace NokitaKaze.WAVParser.Test
 
                     Assert.InRange(-minValue, sinusoidValue_Min, sinusoidValue_Max);
                     Assert.InRange(maxValue, sinusoidValue_Min, sinusoidValue_Max);
+                }
+            }
+        }
+
+        [Fact]
+        public void WriteTest()
+        {
+            var rnd = new Random();
+            // ReSharper disable once UseObjectOrCollectionInitializer
+            var parser = new WAVParser();
+            parser.ChannelCount = 1;
+            parser.Samples = new List<List<double>>() {new List<double>()};
+            parser.BlockAlign = (ushort) (parser.ChannelCount * parser.BitsPerSample / 8);
+
+            for (int i = 0; i < 1000; i++)
+            {
+                parser.Samples[0].Add(rnd.NextDouble() * 2 - 1);
+            }
+
+            // Re read
+            var newRiff = parser.GetDataAsRiff();
+            var reReader = new WAVParser(newRiff);
+            Assert.Equal(parser.ChannelCount, reReader.ChannelCount);
+            Assert.Equal(parser.AudioFormat, reReader.AudioFormat);
+            Assert.Equal(parser.BlockAlign, reReader.BlockAlign);
+            Assert.Equal(parser.SampleRate, reReader.SampleRate);
+            Assert.Equal(parser.BitsPerSample, reReader.BitsPerSample);
+            Assert.Equal(parser.SamplesCount, reReader.SamplesCount);
+            Assert.Equal(parser.Duration, reReader.Duration);
+
+            for (int channelId = 0; channelId < parser.ChannelCount; channelId++)
+            {
+                for (int i = 0; i < parser.SamplesCount; i++)
+                {
+                    var diff = reReader.Samples[channelId][i] - parser.Samples[channelId][i];
+                    Assert.InRange(diff, -0.000_1d, 0.000_1d);
                 }
             }
         }
