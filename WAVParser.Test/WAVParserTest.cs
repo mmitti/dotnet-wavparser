@@ -42,7 +42,7 @@ namespace NokitaKaze.WAVParser.Test
             // WAVE_FORMAT_EXTENSIBLE
             data.Add(new object[] {"./data/test1-s24le.wav", 2, 48000, 24, 13536, "./data/test1-u8.wav", null});
             data.Add(new object[] {"./data/test1-s32le.wav", 2, 48000, 32, 13536, "./data/test1-u8.wav", null});
-            // data.Add(new object[] {"./data/test1-s64le.wav", 2, 48000, 64, 13536, "./data/test1-u8.wav", null});
+            data.Add(new object[] {"./data/test1-s64le.wav", 2, 48000, 64, 13536, "./data/test1-u8.wav", null});
             data.Add(new object[]
             {
                 "./data/a441-24bit.exten.wav", 1, 44100, 24, 44100,
@@ -55,14 +55,12 @@ namespace NokitaKaze.WAVParser.Test
                 "./data/a441-16bit.wav",
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
-            /*
             data.Add(new object[]
             {
                 "./data/a441-64bit.exten-float.wav", 1, 44100, 64, 44100, 
                 "./data/a441-16bit.wav",
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
-            */
 
             return data;
         }

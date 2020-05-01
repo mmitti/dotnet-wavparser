@@ -17,8 +17,6 @@ namespace NokitaKaze.WAVParser
         public const ushort WAVE_FORMAT_IEEE_FLOAT = 0x0003;
         public const ushort WAVE_FORMAT_EXTENSIBLE = 0xfffe;
 
-        public static readonly System.Guid WMMEDIASUBTYPE_PCM = new Guid("00000001-0000-0010-8000-00AA00389B71");
-
         public List<List<double>> Samples;
         public int ChannelCount;
         public int SampleRate;
@@ -83,6 +81,8 @@ namespace NokitaKaze.WAVParser
 
             return s;
         }
+
+        public ushort ExtensionAudioFormat => BitConverter.ToUInt16(this.ExtensionSubFormatGuid.ToByteArray(), 0);
 
         #region Time spans
 
@@ -271,152 +271,6 @@ namespace NokitaKaze.WAVParser
             const double bit8R_down = -1 / (1d * sbyte.MinValue);
             const double bit16R_up = 1 / (1d * short.MaxValue);
             const double bit16R_down = -1 / (1d * short.MinValue);
-            const double bit32R_up = 1 / (1d * int.MaxValue);
-            const double bit64R_up = 1 / (1d * long.MaxValue);
-
-            var startPosition = stream.Position;
-
-            Samples = new List<List<double>>();
-            var samplesCount = (int) (chunkSize / this.BlockAlign);
-            for (int i = 0; i < this.ChannelCount; i++)
-            {
-                Samples.Add(new List<double>(samplesCount));
-            }
-
-            var additionalSeekSize = this.BlockAlign - this.ChannelCount * this.BitsPerSample / 8;
-            while ((stream.Position - startPosition) <= chunkSize - this.BlockAlign)
-            {
-                for (int channel = 0; channel < this.ChannelCount; channel++)
-                {
-                    double value;
-
-                    switch (this.BitsPerSample)
-                    {
-                        case 8:
-                        {
-                            var raw = (int) rd.ReadByte();
-                            raw += sbyte.MinValue;
-
-                            value = (raw > 0) ? raw * bit8R_up : raw * bit8R_down;
-                            break;
-                        }
-
-                        case 16:
-                        {
-                            var raw = rd.ReadInt16();
-                            value = (raw > 0) ? raw * bit16R_up : raw * bit16R_down;
-                            break;
-                        }
-
-                        /*
-                        case 24:
-                        {
-                            throw new NotImplementedException();
-                            break;
-                        }
-
-                        case 32:
-                        {
-                            var raw = rd.ReadInt32();
-                            value = raw * bit32R;
-                            break;
-                        }
-
-                        case 64:
-                        {
-                            var raw = rd.ReadInt64();
-                            value = raw * bit64R;
-                            break;
-                        }
-                        */
-
-                        default:
-                            throw new Exception(string.Format(
-                                "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
-                    }
-
-                    Samples[channel].Add(value);
-                }
-
-                stream.Seek(additionalSeekSize, SeekOrigin.Current);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="rd"></param>
-        /// <param name="stream"></param>
-        /// <param name="chunkSize"></param>
-        /// <exception cref="Exception"></exception>
-        /// https://en.wikipedia.org/wiki/IEEE_754
-        protected void ReadData_IEEE_FLOAT(BinaryReader rd, Stream stream, long chunkSize)
-        {
-            var startPosition = stream.Position;
-            Samples = new List<List<double>>();
-            var samplesCount = (int) (chunkSize / this.BlockAlign);
-            for (int i = 0; i < this.ChannelCount; i++)
-            {
-                Samples.Add(new List<double>(samplesCount));
-            }
-
-            var additionalSeekSize = this.BlockAlign - this.ChannelCount * this.BitsPerSample / 8;
-            while ((stream.Position - startPosition) <= chunkSize - this.BlockAlign)
-            {
-                for (int channel = 0; channel < this.ChannelCount; channel++)
-                {
-                    double value;
-
-                    switch (this.BitsPerSample)
-                    {
-                        case 32:
-                        {
-                            var raw = rd.ReadSingle();
-                            value = Math.Min(Math.Max(raw, -1), 1);
-                            break;
-                        }
-
-                        default:
-                            throw new NotImplementedException(string.Format(
-                                "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
-                    }
-
-                    Samples[channel].Add(value);
-                }
-
-                stream.Seek(additionalSeekSize, SeekOrigin.Current);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="rd"></param>
-        /// <param name="stream"></param>
-        /// <param name="chunkSize"></param>
-        /// <exception cref="NotImplementedException"></exception>
-        /// https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible
-        protected void ReadData_EXTENSIBLE(BinaryReader rd, Stream stream, long chunkSize)
-        {
-            if (this.ExtensionSubFormatGuid == WMMEDIASUBTYPE_PCM)
-            {
-                ReadData_EXTENSIBLE_WMMEDIASUBTYPE_PCM(rd, stream, chunkSize);
-            }
-            else
-            {
-                throw new NotImplementedException(string.Format(
-                    "Not supported extension sub format {0}",
-                    this.ExtensionSubFormatGuid
-                ));
-            }
-        }
-
-        protected void ReadData_EXTENSIBLE_WMMEDIASUBTYPE_PCM(BinaryReader rd, Stream stream, long chunkSize)
-        {
-            const double bit8R_up = 1 / (1d * sbyte.MaxValue);
-            const double bit8R_down = -1 / (1d * sbyte.MinValue);
-            const double bit16R_up = 1 / (1d * short.MaxValue);
-            const double bit16R_down = -1 / (1d * short.MinValue);
             const double bit24R_up = 1 / (1d * ((1 << 23) - 1));
             const double bit24R_down = -1 / (1d * (1 << 23));
             const double bit32R_up = 1 / (1d * int.MaxValue);
@@ -442,7 +296,6 @@ namespace NokitaKaze.WAVParser
 
                     switch (this.BitsPerSample)
                     {
-                        /*
                         case 8:
                         {
                             var raw = (int) rd.ReadByte();
@@ -451,7 +304,6 @@ namespace NokitaKaze.WAVParser
                             value = (raw > 0) ? raw * bit8R_up : raw * bit8R_down;
                             break;
                         }
-                        */
 
                         case 16:
                         {
@@ -501,6 +353,83 @@ namespace NokitaKaze.WAVParser
                 }
 
                 stream.Seek(additionalSeekSize, SeekOrigin.Current);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rd"></param>
+        /// <param name="stream"></param>
+        /// <param name="chunkSize"></param>
+        /// <exception cref="Exception"></exception>
+        /// https://en.wikipedia.org/wiki/IEEE_754
+        protected void ReadData_IEEE_FLOAT(BinaryReader rd, Stream stream, long chunkSize)
+        {
+            var startPosition = stream.Position;
+            Samples = new List<List<double>>();
+            var samplesCount = (int) (chunkSize / this.BlockAlign);
+            for (int i = 0; i < this.ChannelCount; i++)
+            {
+                Samples.Add(new List<double>(samplesCount));
+            }
+
+            var additionalSeekSize = this.BlockAlign - this.ChannelCount * this.BitsPerSample / 8;
+            while ((stream.Position - startPosition) <= chunkSize - this.BlockAlign)
+            {
+                for (int channel = 0; channel < this.ChannelCount; channel++)
+                {
+                    double value;
+
+                    switch (this.BitsPerSample)
+                    {
+                        case 32:
+                        {
+                            var raw = rd.ReadSingle();
+                            value = Math.Min(Math.Max(raw, -1), 1);
+                            break;
+                        }
+
+                        case 64:
+                        {
+                            var raw = rd.ReadDouble();
+                            value = Math.Min(Math.Max(raw, -1), 1);
+                            break;
+                        }
+
+                        default:
+                            throw new Exception(string.Format(
+                                "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
+                    }
+
+                    Samples[channel].Add(value);
+                }
+
+                stream.Seek(additionalSeekSize, SeekOrigin.Current);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rd"></param>
+        /// <param name="stream"></param>
+        /// <param name="chunkSize"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        /// https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible
+        protected void ReadData_EXTENSIBLE(BinaryReader rd, Stream stream, long chunkSize)
+        {
+            switch (this.ExtensionAudioFormat)
+            {
+                case WAVE_FORMAT_PCM:
+                    ReadData_PCM(rd, stream, chunkSize);
+                    return;
+                case WAVE_FORMAT_IEEE_FLOAT:
+                    ReadData_IEEE_FLOAT(rd, stream, chunkSize);
+                    return;
+                default:
+                    throw new NotImplementedException(string.Format("Not supported extension sub format 0x{0:x4}",
+                        this.AudioFormat));
             }
         }
 
