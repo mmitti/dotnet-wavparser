@@ -118,14 +118,14 @@ namespace NokitaKaze.WAVParser
                 var riffMagic = Encoding.ASCII.GetString(rd.ReadBytes(4));
                 if (riffMagic != "RIFF")
                 {
-                    throw new Exception("This is not a RIFF file");
+                    throw new ParsingException("This is not a RIFF file");
                 }
 
                 riffSize = rd.ReadUInt32();
                 var riffFormat = Encoding.ASCII.GetString(rd.ReadBytes(4));
                 if (riffFormat != "WAVE")
                 {
-                    throw new Exception("This is not a WAVE file");
+                    throw new ParsingException("This is not a WAVE file");
                 }
             }
 
@@ -140,7 +140,7 @@ namespace NokitaKaze.WAVParser
                 lastChunk = (subChunkSize + stream.Position == startSeek + riffSize + 8);
                 if (subChunkSize + stream.Position > startSeek + riffSize + 8)
                 {
-                    throw new Exception("Subchunk size is bigger than entire RIFF file");
+                    throw new ParsingException("Subchunk size is bigger than entire RIFF file");
                 }
 
                 switch (subChunkID)
@@ -152,7 +152,7 @@ namespace NokitaKaze.WAVParser
                     case "data":
                         if (!formatFound)
                         {
-                            throw new Exception("Data chunk before format chunk");
+                            throw new ParsingException("Data chunk before format chunk");
                         }
 
                         StartDataSeek = currentSeek + 8;
@@ -182,7 +182,7 @@ namespace NokitaKaze.WAVParser
                 (this.AudioFormat != WAVE_FORMAT_EXTENSIBLE)
             )
             {
-                throw new Exception(string.Format(
+                throw new ParsingException(string.Format(
                     "This is not a plain PCM file (unsupported wave format 0x{0:x4})", this.AudioFormat));
             }
 
@@ -197,7 +197,7 @@ namespace NokitaKaze.WAVParser
             {
                 if (this.AudioFormat == WAVE_FORMAT_EXTENSIBLE)
                 {
-                    throw new Exception("RIFF fmt-header doesn't contain additional header");
+                    throw new ParsingException("RIFF fmt-header doesn't contain additional header");
                 }
 
                 return;
@@ -206,7 +206,7 @@ namespace NokitaKaze.WAVParser
             var headerLeftSaid = rd.ReadUInt16();
             if (headerLeftSaid != headerLeft - 2)
             {
-                throw new Exception(string.Format(
+                throw new ParsingException(string.Format(
                     "RIFF fmt-header. Additional header malformed. Actual additional size {0} isn't equal to expected {1}",
                     headerLeft,
                     headerLeftSaid + 2
@@ -217,7 +217,7 @@ namespace NokitaKaze.WAVParser
             {
                 if (this.AudioFormat == WAVE_FORMAT_EXTENSIBLE)
                 {
-                    throw new Exception("RIFF fmt-header contain empty additional header");
+                    throw new ParsingException("RIFF fmt-header contain empty additional header");
                 }
 
                 return;
@@ -345,7 +345,7 @@ namespace NokitaKaze.WAVParser
                         }
 
                         default:
-                            throw new Exception(string.Format(
+                            throw new ParsingException(string.Format(
                                 "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
                     }
 
@@ -398,7 +398,7 @@ namespace NokitaKaze.WAVParser
                         }
 
                         default:
-                            throw new Exception(string.Format(
+                            throw new ParsingException(string.Format(
                                 "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
                     }
 
