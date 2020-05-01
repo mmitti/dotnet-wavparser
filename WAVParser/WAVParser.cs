@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -71,6 +72,25 @@ namespace NokitaKaze.WAVParser
 
             return s;
         }
+
+        #region Time spans
+
+        public TimeSpan GetSpanForSamples(long samplesCount)
+        {
+            return TimeSpan.FromTicks((long) Math.Round(10_000_000d * samplesCount / this.SampleRate));
+        }
+
+        public long GetFloorSamplesCount(TimeSpan span)
+        {
+            return (long) Math.Floor(span.TotalSeconds * this.SampleRate);
+        }
+
+        public long GetFloorSamplesCount(double seconds)
+        {
+            return GetFloorSamplesCount(TimeSpan.FromSeconds(seconds));
+        }
+
+        #endregion
 
         protected void ParseStream(Stream stream)
         {

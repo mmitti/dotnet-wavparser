@@ -12,13 +12,25 @@ namespace NokitaKaze.WAVParser.Test
         {
             // ReSharper disable once UseObjectOrCollectionInitializer
             var data = new List<object[]>();
-            // Pure PCM files with format = 0x0001
-            data.Add(new object[] {"./data/test1-u8.wav", 2, 48000, 8, 13536, null, null, null});
-            data.Add(new object[] {"./data/test1-s16le.wav", 2, 48000, 16, 13536, "./data/test1-u8.wav", null, null});
-            data.Add(new object[] {"./data/a441-16bit-square.wav", 1, 44100, 16, 400, null, 441, 0.85d});
-            data.Add(new object[] {"./data/a441-16bit-square-1.wav", 1, 44100, 16, 400, null, 441, 1d});
+            // Pure PCM files with format = 0x0001;
+            data.Add(new object[] {"./data/test1-u8.wav", 2, 48000, 8, 13536, null, null});
+            data.Add(new object[] {"./data/test1-s16le.wav", 2, 48000, 16, 13536, "./data/test1-u8.wav", null});
+            data.Add(new object[]
+            {
+                "./data/a441-16bit-square.wav", 1, 44100, 16, 400, null,
+                new Tuple<int, double, bool>(441, 0.85d, true)
+            });
+            data.Add(new object[]
+            {
+                "./data/a441-16bit-square-1.wav", 1, 44100, 16, 400, null,
+                new Tuple<int, double, bool>(441, 1d, true)
+            });
 
-            data.Add(new object[] {"./data/a441-16bit.wav", 1, 44100, 16, 44100, null, 441, 0.85d});
+            data.Add(new object[]
+            {
+                "./data/a441-16bit.wav", 1, 44100, 16, 44100, null,
+                new Tuple<int, double, bool>(441, 0.85d, false)
+            });
 
             /*
 // data.Add(new object[] {"./data/test1-s24le.wav", 2, 48000, 24, 13536, "./data/test1-u8.wav", null, null});
@@ -40,8 +52,7 @@ namespace NokitaKaze.WAVParser.Test
             int bitsPerSample,
             int sampleCount,
             string templateFilename,
-            int? sinusoidHz,
-            double? sinusoidValue
+            Tuple<int, double, bool> toneTest
         )
         {
             WAVParser parser;
@@ -95,31 +106,55 @@ namespace NokitaKaze.WAVParser.Test
                 }
             }
 
-            if (sinusoidHz != null)
+            if (toneTest != null)
             {
-                var sinusoidHz1 = sinusoidHz.Value;
-                var sinusoidValue1 = sinusoidValue ?? 0.8;
+                var (sinusoidHz, sinusoidValue, isSquare) = toneTest;
+                var sinusoidHzR = Math.PI * 2 * sinusoidHz / parser.SampleRate;
 
                 double minValue = double.NaN, maxValue = double.NaN;
 
                 foreach (var channelSamples in parser.Samples)
                 {
                     var sum = 0d;
+                    var sumRMSE_Square = 0d;
+                    var sumRMSE_Sin = 0d;
 
-                    foreach (double sample in channelSamples)
+                    for (var i = 0; i < channelSamples.Count; i++)
                     {
+                        var sample = channelSamples[i];
+
                         minValue = !double.IsNaN(minValue) ? Math.Min(sample, minValue) : sample;
                         maxValue = !double.IsNaN(maxValue) ? Math.Max(sample, maxValue) : sample;
                         sum += sample;
+                        if (isSquare)
+                        {
+                            sumRMSE_Square += Math.Pow(Math.Abs(sample) - sinusoidValue, 2);
+                        }
+                        else
+                        {
+                            var angle = i * sinusoidHzR;
+                            var expectedValue = Math.Sin(angle) * sinusoidValue;
+                            sumRMSE_Sin += Math.Pow(sample - expectedValue, 2);
+                        }
                     }
 
-                    var rmse = sum / channelSamples.Count;
-                    Assert.InRange(rmse, 0, 0.000_02d);
+                    var averageValue = sum / channelSamples.Count;
+                    Assert.InRange(averageValue, 0, 0.000_02d);
+                    if (isSquare)
+                    {
+                        var rmse = Math.Sqrt(sumRMSE_Square / channelSamples.Count);
+                        Assert.InRange(rmse, 0, 0.000_1d);
+                    }
+                    else
+                    {
+                        var rmse = Math.Sqrt(sumRMSE_Sin / channelSamples.Count);
+                        Assert.InRange(rmse, 0, 0.000_1d);
+                    }
                 }
 
                 {
-                    var sinusoidValue_Min = Math.Min(sinusoidValue1 / 1.00037d, sinusoidValue1);
-                    var sinusoidValue_Max = Math.Min(sinusoidValue1 * 1.00037d, 1);
+                    var sinusoidValue_Min = Math.Min(sinusoidValue / 1.00037d, sinusoidValue);
+                    var sinusoidValue_Max = Math.Min(sinusoidValue * 1.00037d, 1);
 
                     Assert.InRange(-minValue, sinusoidValue_Min, sinusoidValue_Max);
                     Assert.InRange(maxValue, sinusoidValue_Min, sinusoidValue_Max);
