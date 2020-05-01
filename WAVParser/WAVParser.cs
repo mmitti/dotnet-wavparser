@@ -19,6 +19,7 @@ namespace NokitaKaze.WAVParser
         public int BitsPerSample;
         public int BlockAlign;
         public long StartDataSeek { get; protected set; }
+        public int AudioFormat;
 
         public WAVParser()
         {
@@ -158,11 +159,14 @@ namespace NokitaKaze.WAVParser
         /// https://docs.microsoft.com/ru-ru/previous-versions/dd757713(v=vs.85)
         protected void ReadHeader(BinaryReader rd)
         {
-            var audioFormat = rd.ReadUInt16();
-            if (audioFormat != WAVE_FORMAT_PCM)
+            this.AudioFormat = rd.ReadUInt16();
+            if (
+                (this.AudioFormat != WAVE_FORMAT_PCM) &&
+                (this.AudioFormat != WAVE_FORMAT_IEEE_FLOAT)
+            )
             {
                 throw new Exception(string.Format(
-                    "This is not a plain PCM file (unsupported wave format 0x{0:x4})", audioFormat));
+                    "This is not a plain PCM file (unsupported wave format 0x{0:x4})", this.AudioFormat));
             }
 
             this.ChannelCount = rd.ReadUInt16();
@@ -170,9 +174,35 @@ namespace NokitaKaze.WAVParser
             rd.ReadBytes(4);
             this.BlockAlign = rd.ReadUInt16();
             this.BitsPerSample = rd.ReadUInt16();
+
+            // TODO waveformatextensible
         }
 
         protected void ReadData(BinaryReader rd, Stream stream, long chunkSize)
+        {
+            switch (this.AudioFormat)
+            {
+                case WAVE_FORMAT_PCM:
+                    ReadData_PCM(rd, stream, chunkSize);
+                    return;
+                case WAVE_FORMAT_IEEE_FLOAT:
+                    ReadData_IEEE_FLOAT(rd, stream, chunkSize);
+                    return;
+                default:
+                    throw new NotImplementedException(string.Format("Unsupported wave format 0x{0:x4}",
+                        this.AudioFormat));
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rd"></param>
+        /// <param name="stream"></param>
+        /// <param name="chunkSize"></param>
+        /// <exception cref="Exception"></exception>
+        /// https://docs.microsoft.com/ru-ru/previous-versions/dd757713(v=vs.85)
+        protected void ReadData_PCM(BinaryReader rd, Stream stream, long chunkSize)
         {
             const double bit8R_up = 1 / (1d * sbyte.MaxValue);
             const double bit8R_down = -1 / (1d * sbyte.MinValue);
@@ -240,6 +270,52 @@ namespace NokitaKaze.WAVParser
 
                         default:
                             throw new Exception(string.Format(
+                                "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
+                    }
+
+                    Samples[channel].Add(value);
+                }
+
+                stream.Seek(additionalSeekSize, SeekOrigin.Current);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rd"></param>
+        /// <param name="stream"></param>
+        /// <param name="chunkSize"></param>
+        /// <exception cref="Exception"></exception>
+        /// https://en.wikipedia.org/wiki/IEEE_754
+        protected void ReadData_IEEE_FLOAT(BinaryReader rd, Stream stream, long chunkSize)
+        {
+            var startPosition = stream.Position;
+            Samples = new List<List<double>>();
+            var samplesCount = (int) (chunkSize / this.BlockAlign);
+            for (int i = 0; i < this.ChannelCount; i++)
+            {
+                Samples.Add(new List<double>(samplesCount));
+            }
+
+            var additionalSeekSize = this.BlockAlign - this.ChannelCount * this.BitsPerSample / 8;
+            while ((stream.Position - startPosition) <= chunkSize - this.BlockAlign)
+            {
+                for (int channel = 0; channel < this.ChannelCount; channel++)
+                {
+                    double value;
+
+                    switch (this.BitsPerSample)
+                    {
+                        case 32:
+                        {
+                            var raw = rd.ReadSingle();
+                            value = Math.Min(Math.Max(raw, -1), 1);
+                            break;
+                        }
+
+                        default:
+                            throw new NotImplementedException(string.Format(
                                 "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
                     }
 
