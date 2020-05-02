@@ -128,8 +128,11 @@ namespace NokitaKaze.WAVParser.Test
                         var expected = parserTemplate.Samples[channelId][i];
                         var real = parser.Samples[channelId][i];
 
-                        var expected1 = Math.Round(expected * minSampleRateC) / minSampleRateC;
-                        var real1 = Math.Round(real * minSampleRateC) / minSampleRateC;
+                        var tE = (expected > 0) ? minSampleRateC - 1 : minSampleRateC;
+                        var tR = (real > 0) ? minSampleRateC - 1 : minSampleRateC;
+
+                        var expected1 = Math.Round(expected * tE) / tE;
+                        var real1 = Math.Round(real * tR) / tR;
 
                         sum += Math.Pow(real1 - expected1, 2);
                     }
@@ -243,6 +246,86 @@ namespace NokitaKaze.WAVParser.Test
             Assert.Equal(0, item.SamplesCount);
             Assert.Equal(TimeSpan.Zero, item.Duration);
             Assert.NotNull(item.ToString());
+        }
+
+        public static IEnumerable<object[]> WriteAndLoadTest()
+        {
+            // ReSharper disable once UseObjectOrCollectionInitializer
+            var data = new List<object[]>();
+
+            var inputFiles = new[]
+            {
+                "./data/a441-16bit.wav",
+                "./data/test1-s16le.wav",
+            };
+            var bitsPerSample = new ushort[] {8, 16, 32, 64};
+
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var bitSample in bitsPerSample)
+            {
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                foreach (var input in inputFiles)
+                {
+                    data.Add(new object[] {input, bitSample});
+                }
+            }
+
+            return data;
+        }
+
+        [Theory]
+        [MemberData(nameof(WriteAndLoadTest))]
+        public void WriteAndLoad(
+            string filename,
+            ushort bitsPerSample
+        )
+        {
+            var parser = new WAVParser(filename);
+            var temporaryFile = Path.GetTempFileName();
+            parser.BitsPerSample = bitsPerSample;
+            parser.Save(temporaryFile);
+
+            //
+            WAVParser reReader;
+            try
+            {
+                reReader = new WAVParser(temporaryFile);
+            }
+            finally
+            {
+                File.Delete(temporaryFile);
+            }
+
+            Assert.Equal(parser.ChannelCount, reReader.ChannelCount);
+            Assert.Equal(parser.SampleRate, reReader.SampleRate);
+            Assert.Equal(parser.BitsPerSample, reReader.BitsPerSample);
+            Assert.Equal(parser.SamplesCount, reReader.SamplesCount);
+            Assert.Equal(parser.Duration, reReader.Duration);
+
+            var minSampleRate = Math.Min(bitsPerSample, parser.BitsPerSample);
+            var minSampleRateC = 1 << (minSampleRate - 1);
+
+            for (int channelId = 0; channelId < parser.ChannelCount; channelId++)
+            {
+                var sum = 0d;
+                for (int i = 0; i < parser.SamplesCount; i++)
+                {
+                    var expected = parser.Samples[channelId][i];
+                    var real = reReader.Samples[channelId][i];
+
+                    var tE = (expected > 0) ? minSampleRateC - 1 : minSampleRateC;
+                    var tR = (real > 0) ? minSampleRateC - 1 : minSampleRateC;
+
+                    var expected1 = Math.Round(expected * tE) / tE;
+                    var real1 = Math.Round(real * tR) / tR;
+
+                    var diff = real1 - expected1;
+                    sum += Math.Pow(diff, 2);
+                }
+
+                var rmse = Math.Sqrt(sum / parser.SamplesCount);
+                Assert.InRange(rmse, 0, 0.000_01d);
+            }
         }
     }
 }

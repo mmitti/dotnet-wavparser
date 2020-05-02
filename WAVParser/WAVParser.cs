@@ -27,6 +27,15 @@ namespace NokitaKaze.WAVParser
         public ushort AudioFormat;
         public System.Guid ExtensionSubFormatGuid;
 
+        public static readonly string ParserVersion;
+
+        public static string GetFullParserVersion()
+        {
+            return "NokitaKaze-WAVParser-" + ParserVersion;
+        }
+
+        #region Load
+
         public WAVParser()
         {
             ChannelCount = 2;
@@ -34,13 +43,6 @@ namespace NokitaKaze.WAVParser
             BitsPerSample = 16;
             BlockAlign = 4;
             AudioFormat = 1;
-        }
-
-        public static readonly string ParserVersion;
-
-        public static string GetFullParserVersion()
-        {
-            return "NokitaKaze-WAVParser-" + ParserVersion;
         }
 
         static WAVParser()
@@ -67,6 +69,34 @@ namespace NokitaKaze.WAVParser
                 ParseStream(ms);
             }
         }
+
+        public WAVParser(string filename)
+        {
+            using (var stream = File.Open(filename, FileMode.Open))
+            {
+                ParseStream(stream);
+            }
+        }
+
+        #endregion
+
+        #region Save
+
+        public void Save(string filename)
+        {
+            using (var stream = File.Open(filename, FileMode.Create))
+            {
+                Save(stream);
+            }
+        }
+
+        public void Save(Stream stream)
+        {
+            var data = this.GetDataAsRiff();
+            stream.Write(data);
+        }
+
+        #endregion
 
         public int SamplesCount
         {
@@ -126,6 +156,17 @@ namespace NokitaKaze.WAVParser
         #endregion
 
         #region Read Data
+
+        protected const double bit8R_up = 1 / (1d * sbyte.MaxValue);
+        protected const double bit8R_down = -1 / (1d * sbyte.MinValue);
+        protected const double bit16R_up = 1 / (1d * short.MaxValue);
+        protected const double bit16R_down = -1 / (1d * short.MinValue);
+        protected const double bit24R_up = 1 / (1d * ((1 << 23) - 1));
+        protected const double bit24R_down = -1 / (1d * (1 << 23));
+        protected const double bit32R_up = 1 / (1d * int.MaxValue);
+        protected const double bit32R_down = -1 / (1d * int.MinValue);
+        protected const double bit64R_up = 1 / (1d * long.MaxValue);
+        protected const double bit64R_down = -1 / (1d * long.MinValue);
 
         protected void ParseStream(Stream stream)
         {
@@ -286,17 +327,6 @@ namespace NokitaKaze.WAVParser
         /// https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatex
         protected void ReadData_PCM(BinaryReader rd, Stream stream, long chunkSize)
         {
-            const double bit8R_up = 1 / (1d * sbyte.MaxValue);
-            const double bit8R_down = -1 / (1d * sbyte.MinValue);
-            const double bit16R_up = 1 / (1d * short.MaxValue);
-            const double bit16R_down = -1 / (1d * short.MinValue);
-            const double bit24R_up = 1 / (1d * ((1 << 23) - 1));
-            const double bit24R_down = -1 / (1d * (1 << 23));
-            const double bit32R_up = 1 / (1d * int.MaxValue);
-            const double bit32R_down = -1 / (1d * int.MinValue);
-            const double bit64R_up = 1 / (1d * long.MaxValue);
-            const double bit64R_down = -1 / (1d * long.MinValue);
-
             var startPosition = stream.Position;
 
             Samples = new List<List<double>>();
@@ -320,14 +350,14 @@ namespace NokitaKaze.WAVParser
                             var raw = (int) rd.ReadByte();
                             raw += sbyte.MinValue;
 
-                            value = (raw > 0) ? raw * bit8R_up : raw * bit8R_down;
+                            value = (raw >= 0) ? raw * bit8R_up : raw * bit8R_down;
                             break;
                         }
 
                         case 16:
                         {
                             var raw = rd.ReadInt16();
-                            value = (raw > 0) ? raw * bit16R_up : raw * bit16R_down;
+                            value = (raw >= 0) ? raw * bit16R_up : raw * bit16R_down;
                             break;
                         }
 
@@ -352,14 +382,14 @@ namespace NokitaKaze.WAVParser
                         case 32:
                         {
                             var raw = rd.ReadInt32();
-                            value = (raw > 0) ? raw * bit32R_up : raw * bit32R_down;
+                            value = (raw >= 0) ? raw * bit32R_up : raw * bit32R_down;
                             break;
                         }
 
                         case 64:
                         {
                             var raw = rd.ReadInt64();
-                            value = (raw > 0) ? raw * bit64R_up : raw * bit64R_down;
+                            value = (raw >= 0) ? raw * bit64R_up : raw * bit64R_down;
                             break;
                         }
 
@@ -456,13 +486,17 @@ namespace NokitaKaze.WAVParser
 
         #region Write Data
 
+        protected const double bit8_up = 1d * sbyte.MaxValue;
+        protected const double bit8_down = -1d * sbyte.MinValue;
+        protected const double bit16_up = 1d * short.MaxValue;
+        protected const double bit16_down = -1d * short.MinValue;
+        protected const double bit32_up = 1d * int.MaxValue;
+        protected const double bit32_down = -1d * int.MinValue;
+        protected const double bit64_up = 1d * long.MaxValue;
+        protected const double bit64_down = -1d * long.MinValue;
+
         public byte[] GetDataAsRiff()
         {
-            if (this.BitsPerSample != 16)
-            {
-                throw new NotImplementedException();
-            }
-
             using (var ms = new MemoryStream())
             {
                 var formatChunk = GetFormatChunk();
@@ -509,7 +543,7 @@ namespace NokitaKaze.WAVParser
                 var averageBPS = this.SampleRate * this.ChannelCount * this.BitsPerSample / 8;
 
                 var rw = new BinaryWriter(ms);
-                rw.Write(this.AudioFormat);
+                rw.Write((ushort) 1); // TODO: correct this.AudioFormat
                 rw.Write(this.ChannelCount);
                 rw.Write(this.SampleRate);
                 rw.Write(averageBPS);
@@ -528,7 +562,11 @@ namespace NokitaKaze.WAVParser
                 var rw = new BinaryWriter(ms);
 
                 var ver = Encoding.ASCII.GetBytes(GetFullParserVersion()).ToList();
-                ver.Add(0);
+                if (ver.Count % 2 == 1)
+                {
+                    // Padding byte
+                    ver.Add(0);
+                }
 
                 rw.Write(Encoding.ASCII.GetBytes("INFO"));
                 rw.Write(Encoding.ASCII.GetBytes("ISFT"));
@@ -541,9 +579,6 @@ namespace NokitaKaze.WAVParser
 
         protected byte[] GetRawPCMData()
         {
-            const double bit16R_up = 1d * short.MaxValue;
-            const double bit16R_down = -1d * short.MinValue;
-
             using (var ms = new MemoryStream())
             {
                 var rw = new BinaryWriter(ms);
@@ -556,8 +591,41 @@ namespace NokitaKaze.WAVParser
                     foreach (var datum in Samples)
                     {
                         var value = datum[i];
-                        short valueS = (short) ((value > 0) ? value * bit16R_up : value * bit16R_down);
-                        rw.Write(valueS);
+
+                        switch (this.BitsPerSample)
+                        {
+                            case 8:
+                            {
+                                var r = (value >= 0) ? value * bit8_up : value * bit8_down;
+                                r -= sbyte.MinValue;
+
+                                rw.Write((byte) Math.Round(r));
+
+                                break;
+                            }
+
+                            case 16:
+                            {
+                                short raw = (short) ((value >= 0) ? value * bit16_up : value * bit16_down);
+                                rw.Write(raw);
+                                break;
+                            }
+
+                            case 32:
+                            {
+                                int raw = (int) ((value >= 0) ? value * bit32_up : value * bit32_down);
+                                rw.Write(raw);
+                                break;
+                            }
+
+                            case 64:
+                            {
+                                // Hint: Not correct format for plain PCM with format = 0x0001
+                                long raw = (long) ((value >= 0) ? value * bit64_up : value * bit64_down);
+                                rw.Write(raw);
+                                break;
+                            }
+                        }
                     }
                 }
 
