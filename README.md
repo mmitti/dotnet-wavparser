@@ -46,7 +46,7 @@ var parser = new NokitaKaze.WAVParser.WAVParser(byteArray);
 ```
 
 ### Write
-```charp
+```csharp
 // method #1
 var byteArray = parser.GetDataAsRiff();
 
