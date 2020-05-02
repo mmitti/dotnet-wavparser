@@ -1,10 +1,11 @@
 language: csharp
 
 mono: none
-dotnet: 2.1.502
+dotnet: 3.1
 
 before_script:
   - dotnet restore
 
+# https://docs.microsoft.com/ru-ru/dotnet/standard/net-standard
 script:
-  - dotnet test WAVParser.Test -c Release -f netcoreapp2.1
+  - dotnet test WAVParser.Test -c Release
