@@ -4,6 +4,13 @@
         <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
         <PackageVersion>0.1.0</PackageVersion>
         <AssemblyVersion>0.1.0</AssemblyVersion>
+        <Authors>NokitaKaze</Authors>
+        <Description>Parser for audio WAVE/RIFF files</Description>
+        <PackageLicenseUrl>https://github.com/nokitakaze/dotnet-wavparser/blob/master/LICENSE</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/nokitakaze/dotnet-wavparser/</RepositoryUrl>
+        <PackageTags>wave,riff,wav,audio</PackageTags>
+        <PackageLicense>LICENSE</PackageLicense>
+        <PackageId>NokitaKaze.WAVParser</PackageId>
     </PropertyGroup>
 
 </Project>
