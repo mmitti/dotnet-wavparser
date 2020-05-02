@@ -93,7 +93,7 @@ namespace NokitaKaze.WAVParser
         public void Save(Stream stream)
         {
             var data = this.GetDataAsRiff();
-            stream.Write(data);
+            stream.Write(data, 0, data.Length);
         }
 
         #endregion
