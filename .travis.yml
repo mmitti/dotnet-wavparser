@@ -1,0 +1,10 @@
+language: csharp
+
+mono: none
+dotnet: 2.1.502
+
+before_script:
+  - dotnet restore
+
+script:
+  - dotnet test WAVParser.Test -c Release -f netcoreapp2.1
