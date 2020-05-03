@@ -9,4 +9,4 @@ before_script:
 
 # https://docs.microsoft.com/ru-ru/dotnet/standard/net-standard
 script:
-  - dotnet test WAVParser.Test -c Release
+  - dotnet test WAVParser.Test -c Release -f netcoreapp3.1
