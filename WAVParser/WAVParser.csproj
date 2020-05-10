@@ -10,7 +10,7 @@
         <PackageTags>wave,riff,wav,audio</PackageTags>
         <PackageLicense>LICENSE</PackageLicense>
         <PackageId>NokitaKaze.WAVParser</PackageId>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     </PropertyGroup>
 
 </Project>

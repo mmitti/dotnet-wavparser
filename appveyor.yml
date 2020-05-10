@@ -7,6 +7,9 @@ install:
   - ps: Expand-Archive -LiteralPath ffmpeg-20200504-5767a2e-win64-shared.zip -DestinationPath .
   - ps: appveyor\ffmpeg.cmd
 
+configuration:
+  - Release
+
 before_build:
   - dotnet restore
 
