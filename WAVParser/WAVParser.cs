@@ -809,7 +809,7 @@ namespace NokitaKaze.WAVParser
             return Processing.Processing.ChangeVolume(this, changeDb);
         }
 
-        public WAVParser MergeFile(WAVParser otherFile, MergeFileAlgorithm algorithm = MergeFileAlgorithm.Average)
+        public WAVParser MergeFile(WAVParser otherFile, MergeFileAlgorithm algorithm = MergeFileAlgorithm.AverageX2)
         {
             return Processing.Processing.MergeFiles(this, otherFile, algorithm);
         }

@@ -66,22 +66,22 @@ namespace NokitaKaze.WAVParser.Test
                 new object[] {"data/test1-s16le.wav", -13d, "data/test1-s16le-minus-13.wav", 0.005d},
 
                 // FFmpeg
-                new object[] {"data/da_ni_spaceman-0.wav", +3d, "data/da_ni_spaceman-0-plus-3.wav", null},
-                new object[] {"data/da_ni_spaceman-0.wav", +6d, "data/da_ni_spaceman-0-plus-6.wav", null},
-                new object[] {"data/da_ni_spaceman-0.wav", +15d, "data/da_ni_spaceman-0-plus-15.wav", null},
-                new object[] {"data/da_ni_spaceman-0.wav", +20d, "data/da_ni_spaceman-0-plus-20.wav", null},
-                new object[] {"data/da_ni_spaceman-0.wav", -3d, "data/da_ni_spaceman-0-minus-3.wav", null},
-                new object[] {"data/da_ni_spaceman-0.wav", -6d, "data/da_ni_spaceman-0-minus-6.wav", null},
-                new object[] {"data/da_ni_spaceman-0.wav", -13d, "data/da_ni_spaceman-0-minus-13.wav", null},
+                new object[] {"data/bach_air_on_g_string-0.wav", +3d, "data/bach_air_on_g_string-0-plus-3.wav", null},
+                new object[] {"data/bach_air_on_g_string-0.wav", +6d, "data/bach_air_on_g_string-0-plus-6.wav", null},
+                new object[] {"data/bach_air_on_g_string-0.wav", +15d, "data/bach_air_on_g_string-0-plus-15.wav", null},
+                new object[] {"data/bach_air_on_g_string-0.wav", +20d, "data/bach_air_on_g_string-0-plus-20.wav", null},
+                new object[] {"data/bach_air_on_g_string-0.wav", -3d, "data/bach_air_on_g_string-0-minus-3.wav", null},
+                new object[] {"data/bach_air_on_g_string-0.wav", -6d, "data/bach_air_on_g_string-0-minus-6.wav", null},
+                new object[] {"data/bach_air_on_g_string-0.wav", -13d, "data/bach_air_on_g_string-0-minus-13.wav", null},
 
                 // FFmpeg
-                new object[] {"data/da_ni_night-1-48000.wav", +3d, "data/da_ni_night-1-48000-plus-3.wav", null},
-                new object[] {"data/da_ni_night-1-48000.wav", +6d, "data/da_ni_night-1-48000-plus-6.wav", null},
-                new object[] {"data/da_ni_night-1-48000.wav", +15d, "data/da_ni_night-1-48000-plus-15.wav", null},
-                new object[] {"data/da_ni_night-1-48000.wav", +20d, "data/da_ni_night-1-48000-plus-20.wav", null},
-                new object[] {"data/da_ni_night-1-48000.wav", -3d, "data/da_ni_night-1-48000-minus-3.wav", null},
-                new object[] {"data/da_ni_night-1-48000.wav", -6d, "data/da_ni_night-1-48000-minus-6.wav", null},
-                new object[] {"data/da_ni_night-1-48000.wav", -13d, "data/da_ni_night-1-48000-minus-13.wav", null},
+                new object[] {"data/dvorak_largo-1-48000.wav", +3d, "data/dvorak_largo-1-48000-plus-3.wav", null},
+                new object[] {"data/dvorak_largo-1-48000.wav", +6d, "data/dvorak_largo-1-48000-plus-6.wav", null},
+                new object[] {"data/dvorak_largo-1-48000.wav", +15d, "data/dvorak_largo-1-48000-plus-15.wav", null},
+                new object[] {"data/dvorak_largo-1-48000.wav", +20d, "data/dvorak_largo-1-48000-plus-20.wav", null},
+                new object[] {"data/dvorak_largo-1-48000.wav", -3d, "data/dvorak_largo-1-48000-minus-3.wav", null},
+                new object[] {"data/dvorak_largo-1-48000.wav", -6d, "data/dvorak_largo-1-48000-minus-6.wav", null},
+                new object[] {"data/dvorak_largo-1-48000.wav", -13d, "data/dvorak_largo-1-48000-minus-13.wav", null},
             };
         }
 
@@ -130,43 +130,43 @@ namespace NokitaKaze.WAVParser.Test
                 },
                 new object[]
                 {
-                    "data/da_ni_spaceman-0.wav", "data/da_ni_night-0.wav",
-                    "data/da_ni_spaceman-0__da_ni_night-0.wav",
+                    "data/bach_air_on_g_string-0.wav", "data/dvorak_largo-0.wav",
+                    "data/bach_air_on_g_string-0__dvorak_largo-0.wav",
                     MergeFileAlgorithm.Average, 0.000_011d,
                 },
                 new object[]
                 {
-                    "data/da_ni_spaceman-0.wav", "data/da_ni_night-1-48000.wav",
-                    "data/da_ni_spaceman-0__da_ni_night-1.wav",
+                    "data/bach_air_on_g_string-0.wav", "data/dvorak_largo-1-48000.wav",
+                    "data/bach_air_on_g_string-0__dvorak_largo-1.wav",
                     MergeFileAlgorithm.Average, 0.0015d,
                 },
                 new object[]
                 {
-                    "data/da_ni_spaceman-1.wav", "data/da_ni_night-0.wav",
-                    "data/da_ni_spaceman-1__da_ni_night-0.wav",
+                    "data/bach_air_on_g_string-1.wav", "data/dvorak_largo-0.wav",
+                    "data/bach_air_on_g_string-1__dvorak_largo-0.wav",
                     MergeFileAlgorithm.Average, 0.000_011d,
                 },
                 new object[]
                 {
-                    "data/da_ni_spaceman-1.wav", "data/da_ni_night-1-48000.wav",
-                    "data/da_ni_spaceman-1__da_ni_night-1.wav",
+                    "data/bach_air_on_g_string-1.wav", "data/dvorak_largo-1-48000.wav",
+                    "data/bach_air_on_g_string-1__dvorak_largo-1.wav",
                     MergeFileAlgorithm.Average, 0.0015d,
                 },
                 new object[]
                 {
-                    "data/da_ni_spaceman-1-48000.wav", "data/da_ni_night-1-48000.wav",
-                    "data/da_ni_spaceman-1__da_ni_night-1.1.wav",
+                    "data/bach_air_on_g_string-1-48000.wav", "data/dvorak_largo-1-48000.wav",
+                    "data/bach_air_on_g_string-1__dvorak_largo-1.1.wav",
                     MergeFileAlgorithm.Average, 0.000_011d,
                 },
             };
 
             foreach (var inputFile in new[]
             {
-                "data/da_ni_spaceman-0.wav",
-                "data/da_ni_spaceman-1.wav",
-                "data/da_ni_night-0.wav",
-                "data/da_ni_night-1.wav",
-                "data/da_ni_spaceman-1-48000.wav",
+                "data/bach_air_on_g_string-0.wav",
+                "data/bach_air_on_g_string-1.wav",
+                "data/dvorak_largo-0.wav",
+                "data/dvorak_largo-1.wav",
+                "data/bach_air_on_g_string-1-48000.wav",
             })
             {
                 rawList.Add(new object[]
@@ -237,10 +237,10 @@ namespace NokitaKaze.WAVParser.Test
         {
             return new[]
             {
-                new object[] {"data/da_ni_night-0.wav", "data/da_ni_night-0-48000.wav"},
-                new object[] {"data/da_ni_night-1.wav", "data/da_ni_night-1-48000.wav"},
-                new object[] {"data/da_ni_spaceman-0.wav", "data/da_ni_spaceman-0-48000.wav"},
-                new object[] {"data/da_ni_spaceman-1.wav", "data/da_ni_spaceman-1-48000.wav"},
+                new object[] {"data/dvorak_largo-0.wav", "data/dvorak_largo-0-48000.wav"},
+                new object[] {"data/dvorak_largo-1.wav", "data/dvorak_largo-1-48000.wav"},
+                new object[] {"data/bach_air_on_g_string-0.wav", "data/bach_air_on_g_string-0-48000.wav"},
+                new object[] {"data/bach_air_on_g_string-1.wav", "data/bach_air_on_g_string-1-48000.wav"},
             };
         }
 

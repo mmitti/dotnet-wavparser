@@ -79,7 +79,9 @@ for (int i = 0; i < 1000; i++)
 parser.Save(...);
 ```
 
-## License
-CC NC (Creative Commons NonCommercial 3.0)
-- http://ccmixter.org/files/Da_nil/61581
-- http://ccmixter.org/files/Da_nil/61580
+## Music License
+Public domain: 
+- Johann Sebastian Bach's "Air on G String" (from Orchestral Suite no. 3) by the USAF Strings (US Air Force Band)
+
+CC BY-SA 3.0 (Creative Commons Attribution-ShareAlike 3.0):
+- Antonín Dvořák's Largo from ('From the New World', Symphony no. 9 in Em) by Barbara Schubert (DuPage Symphony)

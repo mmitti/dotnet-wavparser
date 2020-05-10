@@ -102,7 +102,7 @@ namespace NokitaKaze.WAVParser.Processing
         public static List<double> MergeSamples(
             IList<double> stream1,
             IList<double> stream2,
-            MergeFileAlgorithm algorithm = MergeFileAlgorithm.Average
+            MergeFileAlgorithm algorithm = MergeFileAlgorithm.AverageX2
         )
         {
             switch (algorithm)
@@ -124,7 +124,7 @@ namespace NokitaKaze.WAVParser.Processing
         public static WAVParser MergeFiles(
             WAVParser file1,
             WAVParser file2,
-            MergeFileAlgorithm algorithm = MergeFileAlgorithm.Average
+            MergeFileAlgorithm algorithm = MergeFileAlgorithm.AverageX2
         )
         {
             var realFile1 = file1.Clone();
