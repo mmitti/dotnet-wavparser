@@ -72,11 +72,25 @@ namespace NokitaKaze.WAVParser
             }
         }
 
-        public WAVParser(string filename)
+        public WAVParser(string filename, bool readEntire = true)
         {
-            using (var stream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            if (readEntire)
             {
-                ParseStream(stream);
+                // Significant increase in reading speed
+                var bytes = File.ReadAllBytes(filename);
+                using (var ms = new MemoryStream())
+                {
+                    ms.Write(bytes.ToArray(), 0, bytes.Length);
+                    ms.Seek(0, SeekOrigin.Begin);
+                    ParseStream(ms);
+                }
+            }
+            else
+            {
+                using (var stream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    ParseStream(stream);
+                }
             }
         }
 
@@ -356,75 +370,161 @@ namespace NokitaKaze.WAVParser
         protected void ReadData_PCM(BinaryReader rd, Stream stream, long chunkSize)
         {
             var startPosition = stream.Position;
+            var realChunkSize = Math.Min(stream.Length - startPosition, chunkSize);
 
             Samples = new List<List<double>>();
+            // hint: Здесь намеренно использован chunkSize, а не realChunkSize
             var samplesCount = (int) (chunkSize / this.BlockAlign);
             for (int i = 0; i < this.ChannelCount; i++)
             {
                 Samples.Add(new List<double>(samplesCount));
             }
 
+            var realSamplesCount = (int) (realChunkSize / this.BlockAlign);
             var additionalSeekSize = this.BlockAlign - this.ChannelCount * this.BitsPerSample / 8;
-            while ((stream.Position - startPosition) <= chunkSize - this.BlockAlign)
+            switch (this.BitsPerSample)
+            {
+                case 8:
+                {
+                    ReadData_PCM_8bit(rd, stream, realSamplesCount, additionalSeekSize);
+                    break;
+                }
+                case 16:
+                {
+                    ReadData_PCM_16bit(rd, stream, realSamplesCount, additionalSeekSize);
+                    break;
+                }
+                case 24:
+                {
+                    ReadData_PCM_24bit(rd, stream, realSamplesCount, additionalSeekSize);
+                    break;
+                }
+                case 32:
+                {
+                    ReadData_PCM_32bit(rd, stream, realSamplesCount, additionalSeekSize);
+                    break;
+                }
+                case 64:
+                {
+                    ReadData_PCM_64bit(rd, stream, realSamplesCount, additionalSeekSize);
+                    break;
+                }
+                default:
+                    throw new ParsingException(string.Format(
+                        "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
+            }
+        }
+
+        protected void ReadData_PCM_8bit(
+            BinaryReader rd,
+            Stream stream,
+            int realSamplesCount,
+            int additionalSeekSize
+        )
+        {
+            for (int i = 0; i < realSamplesCount; i++)
+            {
+                for (int channel = 0; channel < this.ChannelCount; channel++)
+                {
+                    var raw = (int) rd.ReadByte();
+                    raw += sbyte.MinValue;
+
+                    var value = (raw >= 0) ? raw * bit8R_up : raw * bit8R_down;
+                    Samples[channel].Add(value);
+                }
+
+                stream.Seek(additionalSeekSize, SeekOrigin.Current);
+            }
+        }
+
+        protected void ReadData_PCM_16bit(
+            BinaryReader rd,
+            Stream stream,
+            int realSamplesCount,
+            int additionalSeekSize
+        )
+        {
+            for (int i = 0; i < realSamplesCount; i++)
+            {
+                for (int channel = 0; channel < this.ChannelCount; channel++)
+                {
+                    var raw = rd.ReadInt16();
+                    var value = (raw >= 0) ? raw * bit16R_up : raw * bit16R_down;
+
+                    Samples[channel].Add(value);
+                }
+
+                stream.Seek(additionalSeekSize, SeekOrigin.Current);
+            }
+        }
+
+        protected void ReadData_PCM_24bit(
+            BinaryReader rd,
+            Stream stream,
+            int realSamplesCount,
+            int additionalSeekSize
+        )
+        {
+            for (int i = 0; i < realSamplesCount; i++)
             {
                 for (int channel = 0; channel < this.ChannelCount; channel++)
                 {
                     double value;
+                    var bytes = rd.ReadBytes(3).ToList();
+                    bytes.Add(0);
+                    var rawUint32 = BitConverter.ToUInt32(bytes.ToArray(), 0);
 
-                    switch (this.BitsPerSample)
+                    if ((rawUint32 & 0b1000_0000_0000_0000_0000_0000) ==
+                        0b1000_0000_0000_0000_0000_0000)
                     {
-                        case 8:
-                        {
-                            var raw = (int) rd.ReadByte();
-                            raw += sbyte.MinValue;
-
-                            value = (raw >= 0) ? raw * bit8R_up : raw * bit8R_down;
-                            break;
-                        }
-
-                        case 16:
-                        {
-                            var raw = rd.ReadInt16();
-                            value = (raw >= 0) ? raw * bit16R_up : raw * bit16R_down;
-                            break;
-                        }
-
-                        case 24:
-                        {
-                            var bytes = rd.ReadBytes(3).ToList();
-                            bytes.Add(0);
-                            var rawUint32 = BitConverter.ToUInt32(bytes.ToArray(), 0);
-
-                            if ((rawUint32 & 0b1000_0000_0000_0000_0000_0000) == 0b1000_0000_0000_0000_0000_0000)
-                            {
-                                value = -bit24R_down * rawUint32 - 2;
-                            }
-                            else
-                            {
-                                value = rawUint32 * bit24R_up;
-                            }
-
-                            break;
-                        }
-
-                        case 32:
-                        {
-                            var raw = rd.ReadInt32();
-                            value = (raw >= 0) ? raw * bit32R_up : raw * bit32R_down;
-                            break;
-                        }
-
-                        case 64:
-                        {
-                            var raw = rd.ReadInt64();
-                            value = (raw >= 0) ? raw * bit64R_up : raw * bit64R_down;
-                            break;
-                        }
-
-                        default:
-                            throw new ParsingException(string.Format(
-                                "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
+                        value = -bit24R_down * rawUint32 - 2;
                     }
+                    else
+                    {
+                        value = rawUint32 * bit24R_up;
+                    }
+
+                    Samples[channel].Add(value);
+                }
+
+                stream.Seek(additionalSeekSize, SeekOrigin.Current);
+            }
+        }
+
+        protected void ReadData_PCM_32bit(
+            BinaryReader rd,
+            Stream stream,
+            int realSamplesCount,
+            int additionalSeekSize
+        )
+        {
+            for (int i = 0; i < realSamplesCount; i++)
+            {
+                for (int channel = 0; channel < this.ChannelCount; channel++)
+                {
+                    var raw = rd.ReadInt32();
+                    var value = (raw >= 0) ? raw * bit32R_up : raw * bit32R_down;
+
+                    Samples[channel].Add(value);
+                }
+
+                stream.Seek(additionalSeekSize, SeekOrigin.Current);
+            }
+        }
+
+        protected void ReadData_PCM_64bit(
+            BinaryReader rd,
+            Stream stream,
+            int realSamplesCount,
+            int additionalSeekSize
+        )
+        {
+            for (int i = 0; i < realSamplesCount; i++)
+            {
+                for (int channel = 0; channel < this.ChannelCount; channel++)
+                {
+                    var raw = rd.ReadInt64();
+                    var value = (raw >= 0) ? raw * bit64R_up : raw * bit64R_down;
 
                     Samples[channel].Add(value);
                 }
@@ -444,6 +544,8 @@ namespace NokitaKaze.WAVParser
         protected void ReadData_IEEE_FLOAT(BinaryReader rd, Stream stream, long chunkSize)
         {
             var startPosition = stream.Position;
+            var realChunkSize = Math.Min(stream.Length - startPosition, chunkSize);
+
             Samples = new List<List<double>>();
             var samplesCount = (int) (chunkSize / this.BlockAlign);
             for (int i = 0; i < this.ChannelCount; i++)
@@ -451,34 +553,61 @@ namespace NokitaKaze.WAVParser
                 Samples.Add(new List<double>(samplesCount));
             }
 
+            var realSamplesCount = (int) (realChunkSize / this.BlockAlign);
             var additionalSeekSize = this.BlockAlign - this.ChannelCount * this.BitsPerSample / 8;
-            while ((stream.Position - startPosition) <= chunkSize - this.BlockAlign)
+            switch (this.BitsPerSample)
+            {
+                case 32:
+                {
+                    ReadData_IEEE_FLOAT_32bit(rd, stream, realSamplesCount, additionalSeekSize);
+                    break;
+                }
+
+                case 64:
+                {
+                    ReadData_IEEE_FLOAT_64bit(rd, stream, realSamplesCount, additionalSeekSize);
+                    break;
+                }
+
+                default:
+                    throw new ParsingException(string.Format(
+                        "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
+            }
+        }
+
+        protected void ReadData_IEEE_FLOAT_32bit(
+            BinaryReader rd,
+            Stream stream,
+            int realSamplesCount,
+            int additionalSeekSize
+        )
+        {
+            for (int i = 0; i < realSamplesCount; i++)
             {
                 for (int channel = 0; channel < this.ChannelCount; channel++)
                 {
-                    double value;
+                    var raw = rd.ReadSingle();
+                    var value = Math.Min(Math.Max(raw, -1), 1);
+                    Samples[channel].Add(value);
+                }
 
-                    switch (this.BitsPerSample)
-                    {
-                        case 32:
-                        {
-                            var raw = rd.ReadSingle();
-                            value = Math.Min(Math.Max(raw, -1), 1);
-                            break;
-                        }
+                stream.Seek(additionalSeekSize, SeekOrigin.Current);
+            }
+        }
 
-                        case 64:
-                        {
-                            var raw = rd.ReadDouble();
-                            value = Math.Min(Math.Max(raw, -1), 1);
-                            break;
-                        }
-
-                        default:
-                            throw new ParsingException(string.Format(
-                                "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
-                    }
-
+        protected void ReadData_IEEE_FLOAT_64bit(
+            BinaryReader rd,
+            Stream stream,
+            int realSamplesCount,
+            int additionalSeekSize
+        )
+        {
+            for (int i = 0; i < realSamplesCount; i++)
+            {
+                for (int channel = 0; channel < this.ChannelCount; channel++)
+                {
+                    var raw = rd.ReadDouble();
+                    var value = Math.Min(Math.Max(raw, -1), 1);
                     Samples[channel].Add(value);
                 }
 
