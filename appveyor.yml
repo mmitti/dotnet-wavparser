@@ -3,7 +3,7 @@ image: Visual Studio 2019
 install:
   - ps: Start-FileDownload 'https://nktkz.s3.eu-central-1.amazonaws.com/development/github/WAVParser/ffmpeg-20200504-5767a2e-win64-shared.zip'
   - ps: Start-FileDownload 'https://nktkz.s3.eu-central-1.amazonaws.com/development/github/WAVParser/bach_air_on_g_string.mp3'
-  - ps: Start-FileDownload 'https://nktkz.s3.eu-central-1.amazonaws.com/development/github/WAVParser/da_nil_-_night.mp3'
+  - ps: Start-FileDownload 'https://nktkz.s3.eu-central-1.amazonaws.com/development/github/WAVParser/dvorak_largo.mp3'
   - ps: Expand-Archive -LiteralPath ffmpeg-20200504-5767a2e-win64-shared.zip -DestinationPath .
   - ps: appveyor\ffmpeg.cmd
 
