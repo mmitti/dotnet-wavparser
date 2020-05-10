@@ -7,59 +7,101 @@ namespace NokitaKaze.WAVParser.Test
 {
     public class WAVParserTest
     {
+        #region Init
+
+        private static readonly string SourceCodeFolder;
+
+        static WAVParserTest()
+        {
+            var current = Directory.GetCurrentDirectory();
+            while (!Directory.Exists(current + "/WAVParser.Test") && (current.Length > 3))
+            {
+                current = Directory.GetParent(current).FullName;
+            }
+
+            if (!Directory.Exists(current + "/WAVParser.Test"))
+            {
+                throw new Exception("Wrong execution folder");
+            }
+
+            SourceCodeFolder = current;
+        }
+
+        private static string ResolveDataFile(string rawFilename)
+        {
+            var testFilenames = new[]
+            {
+                Directory.GetCurrentDirectory() + "\\" + rawFilename,
+                SourceCodeFolder + "\\WAVParser.Test\\" + rawFilename,
+                SourceCodeFolder + "\\" + rawFilename,
+            };
+
+            foreach (var testFilename in testFilenames)
+            {
+                if (File.Exists(testFilename))
+                {
+                    return testFilename;
+                }
+            }
+
+            throw new Exception("Can not resolve file " + rawFilename);
+        }
+
+        #endregion
+
         public static IEnumerable<object[]> ParseFilesTest()
         {
             // ReSharper disable once UseObjectOrCollectionInitializer
             var data = new List<object[]>();
 
             // Pure PCM files with format = 0x0001 (WAVE_FORMAT_PCM)
-            data.Add(new object[] {"./data/test1-u8.wav", 2, 48000, 8, 13536, null, null});
-            data.Add(new object[] {"./data/test1-s16le.wav", 2, 48000, 16, 13536, "./data/test1-u8.wav", null});
+            data.Add(new object[] {"data/test1-u8.wav", 2, 48000, 8, 13536, null, null});
+            data.Add(new object[] {"data/test1-s16le.wav", 2, 48000, 16, 13536, "data/test1-u8.wav", null});
             data.Add(new object[]
             {
-                "./data/a441-16bit-square.wav", 1, 44100, 16, 400, null,
+                "data/a441-16bit-square.wav", 1, 44100, 16, 400, null,
                 new Tuple<int, double, bool>(441, 0.85d, true)
             });
             data.Add(new object[]
             {
-                "./data/a441-16bit-square-1.wav", 1, 44100, 16, 400, null,
+                "data/a441-16bit-square-1.wav", 1, 44100, 16, 400, null,
                 new Tuple<int, double, bool>(441, 1d, true)
             });
 
             data.Add(new object[]
             {
-                "./data/a441-16bit.wav", 1, 44100, 16, 44100, null,
+                "data/a441-16bit.wav", 1, 44100, 16, 44100, null,
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
 
             // IEEE float (WAVE_FORMAT_IEEE_FLOAT)
             data.Add(new object[]
             {
-                "./data/a441-32bit.float.wav", 1, 44100, 32, 44100,
-                "./data/a441-16bit.wav",
+                "data/a441-32bit.float.wav", 1, 44100, 32, 44100,
+                "data/a441-16bit.wav",
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
 
             // WAVE_FORMAT_EXTENSIBLE
-            data.Add(new object[] {"./data/test1-s24le.wav", 2, 48000, 24, 13536, "./data/test1-u8.wav", null});
-            data.Add(new object[] {"./data/test1-s32le.wav", 2, 48000, 32, 13536, "./data/test1-u8.wav", null});
-            data.Add(new object[] {"./data/test1-s64le.wav", 2, 48000, 64, 13536, "./data/test1-u8.wav", null});
+            data.Add(new object[] {"data/test1-s24le.wav", 2, 48000, 24, 13536, "data/test1-u8.wav", null});
+            data.Add(new object[] {"data/test1-s32le.wav", 2, 48000, 32, 13536, "data/test1-u8.wav", null});
+            data.Add(new object[] {"data/test1-s64le.wav", 2, 48000, 64, 13536, "data/test1-u8.wav", null});
             data.Add(new object[]
             {
-                "./data/a441-24bit.exten.wav", 1, 44100, 24, 44100,
-                "./data/a441-16bit.wav",
+                "data/a441-24bit.exten.wav", 1, 44100, 24, 44100,
+                "data/a441-16bit.wav",
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
             data.Add(new object[]
             {
-                "./data/a441-32bit.exten.wav", 1, 44100, 32, 44100,
-                "./data/a441-16bit.wav",
+                "data/a441-32bit.exten.wav", 1, 44100, 32, 44100,
+                "data/a441-16bit.wav",
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
             data.Add(new object[]
             {
-                "./data/a441-64bit.exten-float.wav", 1, 44100, 64, 44100,
-                "./data/a441-16bit.wav",
+                "data/a441-64bit.exten-float.wav", 1, 44100, 64, 44100,
+                "data/a441-16bit.wav",
                 new Tuple<int, double, bool>(441, 0.85d, false)
             });
 
@@ -79,7 +121,7 @@ namespace NokitaKaze.WAVParser.Test
         )
         {
             WAVParser parser;
-            using (var stream = File.Open(filename, FileMode.Open))
+            using (var stream = File.Open(ResolveDataFile(filename), FileMode.Open))
             {
                 parser = new WAVParser(stream);
                 Assert.Equal(channelCount, parser.ChannelCount);
@@ -111,7 +153,7 @@ namespace NokitaKaze.WAVParser.Test
             {
                 Assert.NotEqual(filename, templateFilename);
                 WAVParser parserTemplate;
-                using (var stream = File.Open(templateFilename, FileMode.Open))
+                using (var stream = File.Open(ResolveDataFile(templateFilename), FileMode.Open))
                 {
                     parserTemplate = new WAVParser(stream);
                 }
@@ -255,8 +297,8 @@ namespace NokitaKaze.WAVParser.Test
 
             var inputFiles = new[]
             {
-                "./data/a441-16bit.wav",
-                "./data/test1-s16le.wav",
+                "data/a441-16bit.wav",
+                "data/test1-s16le.wav",
             };
             var bitsPerSample = new ushort[] {8, 16, 32, 64};
 
@@ -280,7 +322,7 @@ namespace NokitaKaze.WAVParser.Test
             ushort bitsPerSample
         )
         {
-            var parser = new WAVParser(filename);
+            var parser = new WAVParser(ResolveDataFile(filename));
             var temporaryFile = Path.GetTempFileName();
             parser.BitsPerSample = bitsPerSample;
             parser.Save(temporaryFile);

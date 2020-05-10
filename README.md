@@ -78,3 +78,8 @@ for (int i = 0; i < 1000; i++)
 
 parser.Save(...);
 ```
+
+## License
+CC NC (Creative Commons NonCommercial 3.0)
+- http://ccmixter.org/files/Da_nil/61581
+- http://ccmixter.org/files/Da_nil/61580

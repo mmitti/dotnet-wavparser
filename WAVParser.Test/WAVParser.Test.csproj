@@ -4,7 +4,7 @@
 
         <IsPackable>false</IsPackable>
 
-        <TargetFrameworks>net472;netcoreapp2.1;netcoreapp2.2;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net472;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,51 +15,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\WAVParser\WAVParser.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Update="data\test1-s16le.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\test1-s24le.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\test1-s32le.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\test1-s64le.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\test1-u8.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-16bit.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-32bit.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-32bit.exten.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-32bit.float.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-16bit-square.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-16bit-square-1.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-64bit.float.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-64bit.exten-float.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="data\a441-24bit.exten.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
     </ItemGroup>
 
 </Project>

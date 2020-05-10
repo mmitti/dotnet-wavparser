@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using NokitaKaze.WAVParser.Processing;
 
 namespace NokitaKaze.WAVParser
 {
@@ -43,6 +44,7 @@ namespace NokitaKaze.WAVParser
             BitsPerSample = 16;
             BlockAlign = 4;
             AudioFormat = 1;
+            Samples = new List<List<double>>() {new List<double>(), new List<double>()};
         }
 
         static WAVParser()
@@ -72,7 +74,7 @@ namespace NokitaKaze.WAVParser
 
         public WAVParser(string filename)
         {
-            using (var stream = File.Open(filename, FileMode.Open))
+            using (var stream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 ParseStream(stream);
             }
@@ -84,7 +86,7 @@ namespace NokitaKaze.WAVParser
 
         public void Save(string filename)
         {
-            using (var stream = File.Open(filename, FileMode.Create))
+            using (var stream = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 Save(stream);
             }
@@ -152,6 +154,32 @@ namespace NokitaKaze.WAVParser
         }
 
         public TimeSpan Duration => this.GetSpanForSamples(this.SamplesCount);
+
+        #endregion
+
+        #region Clonse
+
+        public WAVParser Clone(bool skipSamples = false)
+        {
+            var newFile = new WAVParser
+            {
+                ChannelCount = this.ChannelCount,
+                SampleRate = this.SampleRate,
+                BitsPerSample = this.BitsPerSample,
+                BlockAlign = this.BlockAlign,
+                AudioFormat = this.AudioFormat,
+                Samples = new List<List<double>>(),
+            };
+
+            //
+            if (!skipSamples)
+            {
+                var newSamples = this.Samples.Select(samples => samples.ToList()).ToList();
+                newFile.Samples = newSamples;
+            }
+
+            return newFile;
+        }
 
         #endregion
 
@@ -631,6 +659,30 @@ namespace NokitaKaze.WAVParser
 
                 return FormatChunk("data", ms.ToArray());
             }
+        }
+
+        #endregion
+
+        #region Extensions
+
+        public WAVParser ChangeSampleRate(uint newSampleRate)
+        {
+            return Processing.Processing.ChangeSampleRate(this, newSampleRate);
+        }
+
+        public WAVParser ChangeSampleRate(int newSampleRate)
+        {
+            return Processing.Processing.ChangeSampleRate(this, newSampleRate);
+        }
+
+        public WAVParser ChangeVolume(double changeDb)
+        {
+            return Processing.Processing.ChangeVolume(this, changeDb);
+        }
+
+        public WAVParser MergeFile(WAVParser otherFile, MergeFileAlgorithm algorithm = MergeFileAlgorithm.Average)
+        {
+            return Processing.Processing.MergeFiles(this, otherFile, algorithm);
         }
 
         #endregion
