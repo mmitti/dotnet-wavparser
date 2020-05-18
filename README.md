@@ -80,7 +80,7 @@ parser.Save(...);
 ```
 
 ## Music License
-Public domain: 
+Public domain:
 - Johann Sebastian Bach's "Air on G String" (from Orchestral Suite no. 3) by the USAF Strings (US Air Force Band)
 
 CC BY-SA 3.0 (Creative Commons Attribution-ShareAlike 3.0):

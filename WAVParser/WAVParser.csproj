@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <PackageVersion>0.1.0</PackageVersion>
-        <AssemblyVersion>0.1.0</AssemblyVersion>
+        <AssemblyVersion></AssemblyVersion>
         <Authors>NokitaKaze</Authors>
         <Description>Parser for audio WAVE/RIFF files</Description>
         <PackageLicenseUrl>https://github.com/nokitakaze/dotnet-wavparser/blob/master/LICENSE</PackageLicenseUrl>

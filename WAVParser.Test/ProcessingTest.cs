@@ -229,6 +229,20 @@ namespace NokitaKaze.WAVParser.Test
             }
         }
 
+        [Fact]
+        public void MergeSimple()
+        {
+            var f1 = new WAVParser(ResolveDataFile("data/bach_air_on_g_string-0.wav"));
+            var f2 = new WAVParser(ResolveDataFile("data/dvorak_largo-1.wav"));
+
+            var f3 = f1.MergeFile(f2, MergeFileAlgorithm.Sum);
+            f3.Save(@"H:\server\_svn\_open\WAVParser\WAVParser.Test\data\delme.wav");
+
+            var f4 = f1.MergeFile(f2, MergeFileAlgorithm.AverageX2);
+            f4.Save(@"H:\server\_svn\_open\WAVParser\WAVParser.Test\data\delme.1.wav");
+            Console.WriteLine(f3.Duration);
+        }
+
         #endregion
 
         #region Change samples rate
