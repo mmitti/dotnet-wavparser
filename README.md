@@ -3,7 +3,7 @@
 [![Travis](https://img.shields.io/travis/nokitakaze/dotnet-wavparser.svg)](https://travis-ci.org/nokitakaze/dotnet-wavparser)
 [![Build status](https://ci.appveyor.com/api/projects/status/3fgpod9vvmgu45v8/branch/master?svg=true)](https://ci.appveyor.com/project/nokitakaze/dotnet-wavparser/branch/master)
 [![Test status](https://img.shields.io/appveyor/tests/nokitakaze/dotnet-wavparser.svg)](https://ci.appveyor.com/project/nokitakaze/dotnet-wavparser/branch/master)
-<!-- [![Downloads](https://img.shields.io/nuget/dt/NokitaKaze.WAVParser.svg)](https://www.nuget.org/packages/NokitaKaze.WAVParser) -->
+[![Downloads](https://img.shields.io/nuget/dt/NokitaKaze.WAVParser.svg)](https://www.nuget.org/packages/NokitaKaze.WAVParser)
 
 Yet another parser for wave files. I just like to write my own code.
 
