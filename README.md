@@ -1,15 +1,14 @@
 # WAV Parser
 [![NuGet version (NokitaKaze.WAVParser)](https://img.shields.io/nuget/v/NokitaKaze.WAVParser.svg?style=flat)](https://www.nuget.org/packages/NokitaKaze.WAVParser/)
-[![Travis](https://img.shields.io/travis/nokitakaze/dotnet-wavparser.svg)](https://travis-ci.org/nokitakaze/dotnet-wavparser)
 [![Build status](https://ci.appveyor.com/api/projects/status/3fgpod9vvmgu45v8/branch/master?svg=true)](https://ci.appveyor.com/project/nokitakaze/dotnet-wavparser/branch/master)
 [![Test status](https://img.shields.io/appveyor/tests/nokitakaze/dotnet-wavparser.svg)](https://ci.appveyor.com/project/nokitakaze/dotnet-wavparser/branch/master)
 [![Downloads](https://img.shields.io/nuget/dt/NokitaKaze.WAVParser.svg)](https://www.nuget.org/packages/NokitaKaze.WAVParser)
 
-Yet another parser for wave files. I just like to write my own code.
+Yet another parser for wave files. I just like to write my own code🚲.
 
 This library could read 8/16/24/32/64-bit audio with WAVE_FORMAT_PCM (pcm_u8, pcm_s16le, pcm_s32le, pcm_s24le, pcm_s32le, pcm_s64le) format and 32/64-float bit with WAVE_FORMAT_IEEE_FLOAT (pcm_f32le, pcm_f64le).
 
-Main reason for this library to exist is to support [other library](https://github.com/nokitakaze/VSTAudioProcessor).
+Main reason for the existence of this library is to support [other library](https://github.com/nokitakaze/VSTAudioProcessor).
 
 ## Using
 
@@ -84,4 +83,4 @@ Public domain:
 - Johann Sebastian Bach's "Air on G String" (from Orchestral Suite no. 3) by the USAF Strings (US Air Force Band)
 
 CC BY-SA 3.0 (Creative Commons Attribution-ShareAlike 3.0):
-- Antonín Dvořák's Largo from ('From the New World', Symphony no. 9 in Em) by Barbara Schubert (DuPage Symphony)
+- Antonín Dvořák's "Largo" from ("From the New World", Symphony no. 9 in Em) by Barbara Schubert (DuPage Symphony)
