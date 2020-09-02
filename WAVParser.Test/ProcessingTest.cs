@@ -72,7 +72,8 @@ namespace NokitaKaze.WAVParser.Test
                 new object[] {"data/bach_air_on_g_string-0.wav", +20d, "data/bach_air_on_g_string-0-plus-20.wav", null},
                 new object[] {"data/bach_air_on_g_string-0.wav", -3d, "data/bach_air_on_g_string-0-minus-3.wav", null},
                 new object[] {"data/bach_air_on_g_string-0.wav", -6d, "data/bach_air_on_g_string-0-minus-6.wav", null},
-                new object[] {"data/bach_air_on_g_string-0.wav", -13d, "data/bach_air_on_g_string-0-minus-13.wav", null},
+                new object[]
+                    {"data/bach_air_on_g_string-0.wav", -13d, "data/bach_air_on_g_string-0-minus-13.wav", null},
 
                 // FFmpeg
                 new object[] {"data/dvorak_largo-1-48000.wav", +3d, "data/dvorak_largo-1-48000-plus-3.wav", null},
@@ -227,20 +228,6 @@ namespace NokitaKaze.WAVParser.Test
                 var rmse = Math.Sqrt(sum / actual.Count);
                 Assert.InRange(rmse, 0, maxRMSE);
             }
-        }
-
-        [Fact]
-        public void MergeSimple()
-        {
-            var f1 = new WAVParser(ResolveDataFile("data/bach_air_on_g_string-0.wav"));
-            var f2 = new WAVParser(ResolveDataFile("data/dvorak_largo-1.wav"));
-
-            var f3 = f1.MergeFile(f2, MergeFileAlgorithm.Sum);
-            f3.Save(@"H:\server\_svn\_open\WAVParser\WAVParser.Test\data\delme.wav");
-
-            var f4 = f1.MergeFile(f2, MergeFileAlgorithm.AverageX2);
-            f4.Save(@"H:\server\_svn\_open\WAVParser\WAVParser.Test\data\delme.1.wav");
-            Console.WriteLine(f3.Duration);
         }
 
         #endregion
