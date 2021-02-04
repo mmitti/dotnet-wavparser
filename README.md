@@ -1,3 +1,9 @@
+# Modify version
+This is modified for performance.
+Change double to short and remove float wave support.
+
+# original information
+
 # WAV Parser
 [![NuGet version (NokitaKaze.WAVParser)](https://img.shields.io/nuget/v/NokitaKaze.WAVParser.svg?style=flat)](https://www.nuget.org/packages/NokitaKaze.WAVParser/)
 [![Build status](https://ci.appveyor.com/api/projects/status/3fgpod9vvmgu45v8/branch/master?svg=true)](https://ci.appveyor.com/project/nokitakaze/dotnet-wavparser/branch/master)
