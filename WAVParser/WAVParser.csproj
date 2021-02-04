@@ -9,8 +9,16 @@
         <RepositoryUrl>https://github.com/nokitakaze/dotnet-wavparser/</RepositoryUrl>
         <PackageTags>wave,riff,wav,audio</PackageTags>
         <PackageLicense>LICENSE</PackageLicense>
-        <PackageId>NokitaKaze.WAVParser</PackageId>
+        <PackageId>WAVParser</PackageId>
         <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+      <Optimize>true</Optimize>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+      <Optimize>true</Optimize>
     </PropertyGroup>
 
 </Project>

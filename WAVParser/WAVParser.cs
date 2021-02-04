@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using NokitaKaze.WAVParser.Processing;
 
 namespace NokitaKaze.WAVParser
 {
@@ -19,7 +18,7 @@ namespace NokitaKaze.WAVParser
         public const ushort WAVE_FORMAT_IEEE_FLOAT = 0x0003;
         public const ushort WAVE_FORMAT_EXTENSIBLE = 0xfffe;
 
-        public List<List<double>> Samples;
+        public List<short[]> Samples;
         public ushort ChannelCount;
         public uint SampleRate;
         public ushort BitsPerSample;
@@ -44,7 +43,7 @@ namespace NokitaKaze.WAVParser
             BitsPerSample = 16;
             BlockAlign = 4;
             AudioFormat = 1;
-            Samples = new List<List<double>>() {new List<double>(), new List<double>()};
+            Samples = new List<short[]>();
         }
 
         static WAVParser()
@@ -96,24 +95,6 @@ namespace NokitaKaze.WAVParser
 
         #endregion
 
-        #region Save
-
-        public void Save(string filename)
-        {
-            using (var stream = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                Save(stream);
-            }
-        }
-
-        public void Save(Stream stream)
-        {
-            var data = this.GetDataAsRiff();
-            stream.Write(data, 0, data.Length);
-        }
-
-        #endregion
-
         public int SamplesCount
         {
             get
@@ -123,7 +104,7 @@ namespace NokitaKaze.WAVParser
                     return 0;
                 }
 
-                return Samples[0].Count;
+                return Samples[0].Length;
             }
         }
 
@@ -171,44 +152,7 @@ namespace NokitaKaze.WAVParser
 
         #endregion
 
-        #region Clonse
-
-        public WAVParser Clone(bool skipSamples = false)
-        {
-            var newFile = new WAVParser
-            {
-                ChannelCount = this.ChannelCount,
-                SampleRate = this.SampleRate,
-                BitsPerSample = this.BitsPerSample,
-                BlockAlign = this.BlockAlign,
-                AudioFormat = this.AudioFormat,
-                Samples = new List<List<double>>(),
-            };
-
-            //
-            if (!skipSamples)
-            {
-                var newSamples = this.Samples.Select(samples => samples.ToList()).ToList();
-                newFile.Samples = newSamples;
-            }
-
-            return newFile;
-        }
-
-        #endregion
-
         #region Read Data
-
-        protected const double bit8R_up = 1 / (1d * sbyte.MaxValue);
-        protected const double bit8R_down = -1 / (1d * sbyte.MinValue);
-        protected const double bit16R_up = 1 / (1d * short.MaxValue);
-        protected const double bit16R_down = -1 / (1d * short.MinValue);
-        protected const double bit24R_up = 1 / (1d * ((1 << 23) - 1));
-        protected const double bit24R_down = -1 / (1d * (1 << 23));
-        protected const double bit32R_up = 1 / (1d * int.MaxValue);
-        protected const double bit32R_down = -1 / (1d * int.MinValue);
-        protected const double bit64R_up = 1 / (1d * long.MaxValue);
-        protected const double bit64R_down = -1 / (1d * long.MinValue);
 
         protected void ParseStream(Stream stream)
         {
@@ -346,9 +290,6 @@ namespace NokitaKaze.WAVParser
                 case WAVE_FORMAT_PCM:
                     ReadData_PCM(rd, stream, chunkSize);
                     return;
-                case WAVE_FORMAT_IEEE_FLOAT:
-                    ReadData_IEEE_FLOAT(rd, stream, chunkSize);
-                    return;
                 case WAVE_FORMAT_EXTENSIBLE:
                     ReadData_EXTENSIBLE(rd, stream, chunkSize);
                     return;
@@ -372,12 +313,12 @@ namespace NokitaKaze.WAVParser
             var startPosition = stream.Position;
             var realChunkSize = Math.Min(stream.Length - startPosition, chunkSize);
 
-            Samples = new List<List<double>>();
+            Samples = new List<short[]>();
             // hint: Здесь намеренно использован chunkSize, а не realChunkSize
             var samplesCount = (int) (chunkSize / this.BlockAlign);
             for (int i = 0; i < this.ChannelCount; i++)
             {
-                Samples.Add(new List<double>(samplesCount));
+                Samples.Add(new short[samplesCount]);
             }
 
             var realSamplesCount = (int) (realChunkSize / this.BlockAlign);
@@ -392,21 +333,6 @@ namespace NokitaKaze.WAVParser
                 case 16:
                 {
                     ReadData_PCM_16bit(rd, stream, realSamplesCount, additionalSeekSize);
-                    break;
-                }
-                case 24:
-                {
-                    ReadData_PCM_24bit(rd, stream, realSamplesCount, additionalSeekSize);
-                    break;
-                }
-                case 32:
-                {
-                    ReadData_PCM_32bit(rd, stream, realSamplesCount, additionalSeekSize);
-                    break;
-                }
-                case 64:
-                {
-                    ReadData_PCM_64bit(rd, stream, realSamplesCount, additionalSeekSize);
                     break;
                 }
                 default:
@@ -428,9 +354,7 @@ namespace NokitaKaze.WAVParser
                 {
                     var raw = (int) rd.ReadByte();
                     raw += sbyte.MinValue;
-
-                    var value = (raw >= 0) ? raw * bit8R_up : raw * bit8R_down;
-                    Samples[channel].Add(value);
+                    Samples[channel][i] = (short)(raw * 256);
                 }
 
                 stream.Seek(additionalSeekSize, SeekOrigin.Current);
@@ -449,166 +373,7 @@ namespace NokitaKaze.WAVParser
                 for (int channel = 0; channel < this.ChannelCount; channel++)
                 {
                     var raw = rd.ReadInt16();
-                    var value = (raw >= 0) ? raw * bit16R_up : raw * bit16R_down;
-
-                    Samples[channel].Add(value);
-                }
-
-                stream.Seek(additionalSeekSize, SeekOrigin.Current);
-            }
-        }
-
-        protected void ReadData_PCM_24bit(
-            BinaryReader rd,
-            Stream stream,
-            int realSamplesCount,
-            int additionalSeekSize
-        )
-        {
-            for (int i = 0; i < realSamplesCount; i++)
-            {
-                for (int channel = 0; channel < this.ChannelCount; channel++)
-                {
-                    double value;
-                    var bytes = rd.ReadBytes(3).ToList();
-                    bytes.Add(0);
-                    var rawUint32 = BitConverter.ToUInt32(bytes.ToArray(), 0);
-
-                    if ((rawUint32 & 0b1000_0000_0000_0000_0000_0000) ==
-                        0b1000_0000_0000_0000_0000_0000)
-                    {
-                        value = -bit24R_down * rawUint32 - 2;
-                    }
-                    else
-                    {
-                        value = rawUint32 * bit24R_up;
-                    }
-
-                    Samples[channel].Add(value);
-                }
-
-                stream.Seek(additionalSeekSize, SeekOrigin.Current);
-            }
-        }
-
-        protected void ReadData_PCM_32bit(
-            BinaryReader rd,
-            Stream stream,
-            int realSamplesCount,
-            int additionalSeekSize
-        )
-        {
-            for (int i = 0; i < realSamplesCount; i++)
-            {
-                for (int channel = 0; channel < this.ChannelCount; channel++)
-                {
-                    var raw = rd.ReadInt32();
-                    var value = (raw >= 0) ? raw * bit32R_up : raw * bit32R_down;
-
-                    Samples[channel].Add(value);
-                }
-
-                stream.Seek(additionalSeekSize, SeekOrigin.Current);
-            }
-        }
-
-        protected void ReadData_PCM_64bit(
-            BinaryReader rd,
-            Stream stream,
-            int realSamplesCount,
-            int additionalSeekSize
-        )
-        {
-            for (int i = 0; i < realSamplesCount; i++)
-            {
-                for (int channel = 0; channel < this.ChannelCount; channel++)
-                {
-                    var raw = rd.ReadInt64();
-                    var value = (raw >= 0) ? raw * bit64R_up : raw * bit64R_down;
-
-                    Samples[channel].Add(value);
-                }
-
-                stream.Seek(additionalSeekSize, SeekOrigin.Current);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="rd"></param>
-        /// <param name="stream"></param>
-        /// <param name="chunkSize"></param>
-        /// <exception cref="Exception"></exception>
-        /// https://en.wikipedia.org/wiki/IEEE_754
-        protected void ReadData_IEEE_FLOAT(BinaryReader rd, Stream stream, long chunkSize)
-        {
-            var startPosition = stream.Position;
-            var realChunkSize = Math.Min(stream.Length - startPosition, chunkSize);
-
-            Samples = new List<List<double>>();
-            var samplesCount = (int) (chunkSize / this.BlockAlign);
-            for (int i = 0; i < this.ChannelCount; i++)
-            {
-                Samples.Add(new List<double>(samplesCount));
-            }
-
-            var realSamplesCount = (int) (realChunkSize / this.BlockAlign);
-            var additionalSeekSize = this.BlockAlign - this.ChannelCount * this.BitsPerSample / 8;
-            switch (this.BitsPerSample)
-            {
-                case 32:
-                {
-                    ReadData_IEEE_FLOAT_32bit(rd, stream, realSamplesCount, additionalSeekSize);
-                    break;
-                }
-
-                case 64:
-                {
-                    ReadData_IEEE_FLOAT_64bit(rd, stream, realSamplesCount, additionalSeekSize);
-                    break;
-                }
-
-                default:
-                    throw new ParsingException(string.Format(
-                        "This Bit Per Sample ({0}) is not implemented", this.BitsPerSample));
-            }
-        }
-
-        protected void ReadData_IEEE_FLOAT_32bit(
-            BinaryReader rd,
-            Stream stream,
-            int realSamplesCount,
-            int additionalSeekSize
-        )
-        {
-            for (int i = 0; i < realSamplesCount; i++)
-            {
-                for (int channel = 0; channel < this.ChannelCount; channel++)
-                {
-                    var raw = rd.ReadSingle();
-                    var value = Math.Min(Math.Max(raw, -1), 1);
-                    Samples[channel].Add(value);
-                }
-
-                stream.Seek(additionalSeekSize, SeekOrigin.Current);
-            }
-        }
-
-        protected void ReadData_IEEE_FLOAT_64bit(
-            BinaryReader rd,
-            Stream stream,
-            int realSamplesCount,
-            int additionalSeekSize
-        )
-        {
-            for (int i = 0; i < realSamplesCount; i++)
-            {
-                for (int channel = 0; channel < this.ChannelCount; channel++)
-                {
-                    var raw = rd.ReadDouble();
-                    var value = Math.Min(Math.Max(raw, -1), 1);
-                    Samples[channel].Add(value);
+                    Samples[channel][i] = raw;
                 }
 
                 stream.Seek(additionalSeekSize, SeekOrigin.Current);
@@ -630,188 +395,10 @@ namespace NokitaKaze.WAVParser
                 case WAVE_FORMAT_PCM:
                     ReadData_PCM(rd, stream, chunkSize);
                     return;
-                case WAVE_FORMAT_IEEE_FLOAT:
-                    ReadData_IEEE_FLOAT(rd, stream, chunkSize);
-                    return;
                 default:
                     throw new NotImplementedException(string.Format("Not supported extension sub format 0x{0:x4}",
                         this.AudioFormat));
             }
-        }
-
-        #endregion
-
-        #region Write Data
-
-        protected const double bit8_up = 1d * sbyte.MaxValue;
-        protected const double bit8_down = -1d * sbyte.MinValue;
-        protected const double bit16_up = 1d * short.MaxValue;
-        protected const double bit16_down = -1d * short.MinValue;
-        protected const double bit32_up = 1d * int.MaxValue;
-        protected const double bit32_down = -1d * int.MinValue;
-        protected const double bit64_up = 1d * long.MaxValue;
-        protected const double bit64_down = -1d * long.MinValue;
-
-        public byte[] GetDataAsRiff()
-        {
-            using (var ms = new MemoryStream())
-            {
-                var formatChunk = GetFormatChunk();
-                var infoChunk = GetListChunk();
-                var rawPCMData = GetRawPCMData();
-
-                var rw = new BinaryWriter(ms);
-                rw.Write(Encoding.ASCII.GetBytes("RIFF"));
-                rw.Write((uint) (formatChunk.Length + infoChunk.Length + rawPCMData.Length + 4));
-                rw.Write(Encoding.ASCII.GetBytes("WAVE"));
-                rw.Write(formatChunk);
-                rw.Write(infoChunk);
-                rw.Write(rawPCMData);
-
-                ms.Seek(0, SeekOrigin.Begin);
-                return ms.ToArray();
-            }
-        }
-
-        protected static byte[] FormatChunk(string title, byte[] input)
-        {
-            if (title.Length != 4)
-            {
-                throw new Exception();
-            }
-
-            using (var ms = new MemoryStream())
-            {
-                var rw = new BinaryWriter(ms);
-
-                rw.Write(Encoding.ASCII.GetBytes(title));
-                rw.Write((uint) input.Length);
-                rw.Write(input);
-
-                ms.Seek(0, SeekOrigin.Begin);
-                return ms.ToArray();
-            }
-        }
-
-        protected byte[] GetFormatChunk()
-        {
-            using (var ms = new MemoryStream())
-            {
-                var averageBPS = this.SampleRate * this.ChannelCount * this.BitsPerSample / 8;
-
-                var rw = new BinaryWriter(ms);
-                rw.Write((ushort) 1); // TODO: correct this.AudioFormat
-                rw.Write(this.ChannelCount);
-                rw.Write(this.SampleRate);
-                rw.Write(averageBPS);
-                rw.Write((ushort) (this.BitsPerSample * this.ChannelCount / 8));
-                rw.Write(this.BitsPerSample);
-
-                ms.Seek(0, SeekOrigin.Begin);
-                return FormatChunk("fmt ", ms.ToArray());
-            }
-        }
-
-        protected byte[] GetListChunk()
-        {
-            using (var ms = new MemoryStream())
-            {
-                var rw = new BinaryWriter(ms);
-
-                var ver = Encoding.ASCII.GetBytes(GetFullParserVersion()).ToList();
-                if (ver.Count % 2 == 1)
-                {
-                    // Padding byte
-                    ver.Add(0);
-                }
-
-                rw.Write(Encoding.ASCII.GetBytes("INFO"));
-                rw.Write(Encoding.ASCII.GetBytes("ISFT"));
-                rw.Write((uint) ver.Count);
-                rw.Write(ver.ToArray());
-
-                return FormatChunk("LIST", ms.ToArray());
-            }
-        }
-
-        protected byte[] GetRawPCMData()
-        {
-            using (var ms = new MemoryStream())
-            {
-                var rw = new BinaryWriter(ms);
-
-                var count = Samples[0].Count;
-
-                for (int i = 0; i < count; i++)
-                {
-                    // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
-                    foreach (var datum in Samples)
-                    {
-                        var value = datum[i];
-
-                        switch (this.BitsPerSample)
-                        {
-                            case 8:
-                            {
-                                var r = (value >= 0) ? value * bit8_up : value * bit8_down;
-                                r -= sbyte.MinValue;
-
-                                rw.Write((byte) Math.Round(r));
-
-                                break;
-                            }
-
-                            case 16:
-                            {
-                                short raw = (short) ((value >= 0) ? value * bit16_up : value * bit16_down);
-                                rw.Write(raw);
-                                break;
-                            }
-
-                            case 32:
-                            {
-                                int raw = (int) ((value >= 0) ? value * bit32_up : value * bit32_down);
-                                rw.Write(raw);
-                                break;
-                            }
-
-                            case 64:
-                            {
-                                // Hint: Not correct format for plain PCM with format = 0x0001
-                                long raw = (long) ((value >= 0) ? value * bit64_up : value * bit64_down);
-                                rw.Write(raw);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                return FormatChunk("data", ms.ToArray());
-            }
-        }
-
-        #endregion
-
-        #region Extensions
-
-        public WAVParser ChangeSampleRate(uint newSampleRate)
-        {
-            return Processing.Processing.ChangeSampleRate(this, newSampleRate);
-        }
-
-        public WAVParser ChangeSampleRate(int newSampleRate)
-        {
-            return Processing.Processing.ChangeSampleRate(this, newSampleRate);
-        }
-
-        public WAVParser ChangeVolume(double changeDb)
-        {
-            return Processing.Processing.ChangeVolume(this, changeDb);
-        }
-
-        public WAVParser MergeFile(WAVParser otherFile, MergeFileAlgorithm algorithm = MergeFileAlgorithm.AverageX2)
-        {
-            return Processing.Processing.MergeFiles(this, otherFile, algorithm);
         }
 
         #endregion
