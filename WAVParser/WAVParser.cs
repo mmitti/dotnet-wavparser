@@ -71,7 +71,7 @@ namespace NokitaKaze.WAVParser
             }
         }
 
-        public WAVParser(string filename, bool readEntire = true)
+        public WAVParser(string filename, bool readEntire = true, int sampleRate = -1)
         {
             if (readEntire)
             {
@@ -90,6 +90,11 @@ namespace NokitaKaze.WAVParser
                 {
                     ParseStream(stream);
                 }
+            }
+            if (sampleRate > 0)
+            {
+                Samples = Processing.ChangeSampleRate(Samples, (int)SampleRate, sampleRate);
+                SampleRate = (uint)sampleRate;
             }
         }
 
