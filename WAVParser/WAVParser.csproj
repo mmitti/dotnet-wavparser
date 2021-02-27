@@ -21,4 +21,19 @@
       <Optimize>true</Optimize>
     </PropertyGroup>
 
+    <ItemGroup>
+      <None Include="..\..\lib\libFLAC.dylib" Link="libFLAC.dylib">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="..\..\lib\libFLAC.so" Link="libFLAC.so">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="FLAC.dll">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
